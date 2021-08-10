@@ -7,16 +7,25 @@ go-ds-cluster
 ## About The Project
 
 This project is going to implement [go-datastore](https://github.com/ipfs/go-datastore) in a form of cluster.
+
 [IPFS](https://github.com/ipfs/ipfs) is awsome, we like to use ipfs for data sharing. And [IPFS](https://github.com/ipfs/ipfs) using implementation of [go-datastore](https://github.com/ipfs/go-datastore) as base storage.
+
 There are several implementation of [go-datastore](https://github.com/ipfs/go-datastore):
-[go-ds-flatfs](https://github.com/ipfs/go-ds-flatfs)
-[go-ds-badger](https://github.com/ipfs/go-ds-badger)
-[go-ds-leveldb](https://github.com/ipfs/go-ds-leveldb)
-...
+- [go-ds-flatfs](https://github.com/ipfs/go-ds-flatfs)
+- [go-ds-badger](https://github.com/ipfs/go-ds-badger)
+- [go-ds-leveldb](https://github.com/ipfs/go-ds-leveldb)
+- ...
+
 They are mainly focus on storing data within one PC. Single PC has limit on I/O, there lacks a way to take advantage of distributed system with several or more PCs.
 
 We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to manage pin-set within multiple peers. But we thought it is more suitable for manage data backups and recovery. We expect that even only one ipfs peer could also take advantage of distributed storage.
 
+## Architecture
+
+- The cluster is composed with one KV reference provider and several KV datastore providers 
+- The KV reference provider is the only entry point of the cluster
+- Data should be distributed to KV datastore providers by a sharding strategy like which in redis cluster 
+- New KV datastore providers can be dynamically introduced to cluster, so as dynamically removing existing KV datastore providers
 
 
 
