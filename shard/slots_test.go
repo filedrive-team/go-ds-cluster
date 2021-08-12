@@ -16,26 +16,26 @@ func nodeFactory(num int) []Node {
 }
 
 var expectedSlotsRanges map[int][]SlotsRange = map[int][]SlotsRange{
-	1: []SlotsRange{
+	1: {
 		{0, 16383},
 	},
-	2: []SlotsRange{
+	2: {
 		{0, 8191},
 		{8192, 16383},
 	},
-	3: []SlotsRange{
+	3: {
 		{0, 5460},
 		{5461, 10922},
 		{10923, 16383},
 	},
-	5: []SlotsRange{
+	5: {
 		{0, 3276},
 		{3277, 6553},
 		{6554, 9829},
 		{9830, 13106},
 		{13107, 16383},
 	},
-	7: []SlotsRange{
+	7: {
 		{0, 2340},
 		{2341, 4680},
 		{4681, 7021},
@@ -99,4 +99,78 @@ func TestInitSlotsManager(t *testing.T) {
 		t.Fatal(errmsg)
 	}
 
+}
+
+func TestNodeByKey(t *testing.T) {
+	sm7 := InitSlotManager(nodeFactory(7))
+	sm7.Check()
+
+	nd, err := sm7.NodeByKey("filedag")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 7022 && nd.Slots.End != 9361 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeByKey("/providers/CIQAAKFLOWAUFV2ZUI7ZIPQN76UV73UUWSVSVXCB22L6CH5K3F4J7ZQ/AASAQAISECO6C4ACMIE3DVPVQCA6OXIVOYI3WE5QTJG6Z3RKDLM5C6SNLDVHY")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 9362 && nd.Slots.End != 11702 {
+		t.Fatal("unexpected node")
+	}
+}
+
+func TestNodeBySlot(t *testing.T) {
+	sm7 := InitSlotManager(nodeFactory(7))
+	sm7.Check()
+
+	nd, err := sm7.NodeBySlot(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 0 && nd.Slots.End != 2340 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeBySlot(2339)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 0 && nd.Slots.End != 2340 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeBySlot(2341)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 2341 && nd.Slots.End != 4680 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeBySlot(4681)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 4681 && nd.Slots.End != 7021 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeBySlot(14042)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 11703 && nd.Slots.End != 14042 {
+		t.Fatal("unexpected node")
+	}
+
+	nd, err = sm7.NodeBySlot(14043)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 14043 && nd.Slots.End != 16383 {
+		t.Fatal("unexpected node")
+	}
 }
