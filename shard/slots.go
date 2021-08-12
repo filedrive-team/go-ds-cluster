@@ -2,6 +2,8 @@ package shard
 
 import (
 	"fmt"
+
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -18,7 +20,8 @@ type SlotsManager struct {
 }
 
 type Node struct {
-	ID string
+	ID    string
+	Slots SlotsRange
 }
 
 type SlotsRange struct {
@@ -66,14 +69,42 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 			Start: start,
 			End:   end,
 		}
+		sm.nodes[i].Slots = sm.slotsRange[i]
 		sm.nodeMap[i] = sm.nodes[i]
 	}
 
 	return sm
 }
 
+func (sm *SlotsManager) NodeByKey(key string) (*Node, error) {
+	// figure out slot number
+	slotN := CRC16Sum(key) & (SLOTS_NUM - 1)
+	return sm.NodeBySlot(slotN)
+}
+
+func (sm *SlotsManager) NodeBySlot(n uint16) (*Node, error) {
+	slotN := n
+	// figure out range number
+	rn := slotN / sm.rangeLen
+	if int(rn) >= len(sm.slotsRange) {
+		return nil, xerrors.Errorf("unexpected slot number")
+	}
+	maybeRange := sm.slotsRange[rn]
+	// check if really in the range
+	if slotN < maybeRange.Start {
+		rn--
+	} else if slotN > maybeRange.End {
+		rn++
+	}
+	if node, ok := sm.nodeMap[int(rn)]; ok {
+		return &node, nil
+	}
+	return nil, xerrors.Errorf("failed to find node by slot: %d; rangeN: %d", slotN, rn)
+}
+
 func (sm *SlotsManager) Check() {
 	fmt.Printf("nodes: %d\n", sm.nodesNum)
+	fmt.Printf("range len: %d\n", sm.rangeLen)
 	for i, sr := range sm.slotsRange {
 		fmt.Printf("slot range %d start: %d, end: %d, num: %d\n", i, sr.Start, sr.End, sr.End-sr.Start+1)
 	}
