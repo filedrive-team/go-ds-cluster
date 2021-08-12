@@ -3,7 +3,7 @@ go-ds-cluster 来自于 Filedrive 团队对 FileDAG (一个基于 IPFS 提供商
 
 ## 项目依赖
 
-go-ds-cluser 会基于一些成熟的开源集群方案来展开。
+go-ds-cluster 会基于一些成熟的开源集群方案来展开。
 - 数据分片 - 采用 redis-cluster 使用的 hash slots
 - 节点间通信 - 采用 libp2p
 - 共识机制 - CRDT 或者 Raft
@@ -11,4 +11,18 @@ go-ds-cluser 会基于一些成熟的开源集群方案来展开。
 
 ## 集群架构
 
-  
+- 数据节点由两个基本部分组成
+  - datastore 提供 key-value 存储服务
+  - cluster instance 负责处理集群相关业务
+- 集群中任意一个节点都可以承担 ipfs 节点的存储服务，把数据按照集群的分片规则分散到集群的不同数据节点
+- 集群共同维护一个 key-value 表，代表集群的全部存储数据
+- 集群共同维护 hash slots 和 数据节点的关系
+
+## 路线图
+
+- 完成数据分片功能和 hash slots 维护
+- 节点间基于 libp2p 的通信模块
+- 集群节点间共识机制的完成
+- 实现 hash slots 的重新分配和重新平衡
+- 实现 hash slots 重新分配平衡后的数据迁移
+- 权限和数据管理
