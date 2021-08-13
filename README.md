@@ -22,12 +22,21 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 
 ## Architecture
 
-- The cluster is composed with one KV reference provider and several KV datastore providers 
-- The KV reference provider is the only entry point of the cluster
-- Data should be distributed to KV datastore providers by a sharding strategy like which in redis cluster 
-- New KV datastore providers can be dynamically introduced to cluster, so as dynamically removing existing KV datastore providers
+- data node has two basic components
+  - datastore offering key-value strorage
+  - cluster instance maintains cluster related logic
+- any node in the cluster can be used has ipfs datastore, sharding data to data nodes in the cluster
+- a key-value table of all data in the datastore has been maintained by every node
+- the relation between hash slots and data node also been maintained by every node
 
+## Roadmap
 
+- data sharding and hash slots maintaining 
+- communication module based on libp2p between data nodes
+- consensus module build up
+- hash slots re-allocat and re-balance strategy 
+- data migration after hash slots re-allocat or re-balance to support dynamically adding or removing nodes
+- authentication and data management
 
 
 
