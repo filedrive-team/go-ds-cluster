@@ -1,22 +1,22 @@
-集群中的数据节点数量、ID、以及和 hash slots 的对应关系是如何生成？
+How are the number of data nodes, ID of each node and the relationship between hash slots and data nodes been come up ?
 ```md
-- 使用初始化脚本来生成
-- 根据输入的节点数量来生成ID, 计划使用 peer id
-- 根据节点数量来分配 hash slots
-- 生成配置文件
+- all generated from init script
+- use peer id as node id
+- hash slots allocated according to the input node number
+- will generate config files
 ```
 
-集群配置如何更改？
+How to change cluster configs?
 ```
-暂不支持更改
-```
-
-集群中节点未全部启动好时，可以接受存储服务吗？
-```
-可以接受存储服务，但是如果待存储的数据被分配到未启动的节点时，会收到报错。
+Currently, can not change.
 ```
 
-集群中的节点全部是数据节点吗？
+Can cluster accept data when some data nodes is down？
 ```
-不是，有非存储节点，只负责根据配置把待存储的数据分流到对应的数据节点上。
+Yes, it can. However, error may bump up if the data has been allocated to data node which is down.
+```
+
+If all the nodes in the cluster are data nodes?
+```
+No，there have non-storage nodes which pass data to data node according to config.
 ```
