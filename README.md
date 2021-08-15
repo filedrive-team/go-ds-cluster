@@ -34,7 +34,7 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 - data sharding and hash slots maintaining 
 - communication module based on libp2p between data nodes
 - consensus module build up
-- hash slots re-allocat and re-balance strategy 
+- hash slots re-allocate and re-balance strategy 
 - data migration after hash slots re-allocat or re-balance to support dynamically adding or removing nodes
 - authentication and data management
 
