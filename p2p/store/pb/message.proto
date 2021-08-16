@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "/pb";
+
+enum ErrCode {
+    None = 0;
+    NotFound = 1;
+    Others = 100;
+}
+
+enum Action {
+    Get = 0;
+    GetSize = 1;
+    Has = 2;
+    Put = 3;
+    Delete = 4;
+}
+
+message StoreRequest {
+    string key = 1;
+    bytes value = 2;
+    Action action = 3;
+}
+
+message StoreResponse {
+    ErrCode code = 1;
+    string msg = 2;
+    bytes value = 3;
+    int64 size = 4;
+    bool has = 5;
+}
