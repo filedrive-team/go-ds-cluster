@@ -77,19 +77,21 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) has(s network.Stream, req *RequestMessage) {
-	res := &storepb.StoreResponse{}
-	exists, err := sv.ds.Has(ds.NewKey(key))
+	res := &ReplyMessage{}
+	exists, err := sv.ds.Has(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
-			res.Code = storepb.ErrCode_None
+			res.Code = ErrNotFound
 		} else {
-			res.Code = storepb.ErrCode_Others
+			res.Code = ErrOthers
 		}
 		res.Msg = err.Error()
 	} else {
-		res.Has = exists
+		res.Exists = exists
 	}
-	sv.sendMsg(s, res)
+	if err := WriteReplyMsg(s, res); err != nil {
+		logging.Error(err)
+	}
 }
 
 func (sv *server) getSize(s network.Stream, req *RequestMessage) {
