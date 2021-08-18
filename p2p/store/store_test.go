@@ -14,6 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 )
 
 func TestP2P(t *testing.T) {
@@ -53,10 +54,12 @@ func TestP2P(t *testing.T) {
 		}
 	})
 
-	err = h1.Connect(ctx, h2Info)
-	if err != nil {
-		t.Error(err)
-	}
+	h1.Peerstore().AddAddrs(h2Info.ID, h2Info.Addrs, peerstore.PermanentAddrTTL)
+
+	// err = h1.Connect(ctx, h2Info)
+	// if err != nil {
+	// 	t.Error(err)
+	// }
 
 	s, err := h1.NewStream(ctx, h2Info.ID, PROTOCOL_REQUEST_V1)
 	if err != nil {
