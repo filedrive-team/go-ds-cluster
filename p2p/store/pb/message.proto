@@ -22,6 +22,7 @@ message StoreRequest {
     string key = 1;
     bytes value = 2;
     Action action = 3;
+    string id = 4;
 }
 
 message StoreResponse {
@@ -30,4 +31,5 @@ message StoreResponse {
     bytes value = 3;
     int64 size = 4;
     bool has = 5;
+    string id = 6;
 }
