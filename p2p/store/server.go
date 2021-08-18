@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
-	storepb "github.com/filedrive-team/go-ds-cluster/p2p/store/pb"
 	ds "github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -70,7 +69,7 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 		res.Code = ErrOthers
 		res.Msg = err.Error()
 	}
-	res.Msg = "ok"
+	//res.Msg = "ok"
 	if err := WriteReplyMsg(s, res); err != nil {
 		logging.Error(err)
 	}
@@ -95,44 +94,49 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) getSize(s network.Stream, req *RequestMessage) {
-	res := &storepb.StoreResponse{}
-	size, err := sv.ds.GetSize(ds.NewKey(key))
+	res := &ReplyMessage{}
+	size, err := sv.ds.GetSize(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
-			res.Code = storepb.ErrCode_NotFound
+			res.Code = ErrNotFound
 		} else {
-			res.Code = storepb.ErrCode_Others
+			res.Code = ErrOthers
 		}
 		res.Msg = err.Error()
 	} else {
 		res.Size = int64(size)
 	}
-	sv.sendMsg(s, res)
+	if err := WriteReplyMsg(s, res); err != nil {
+		logging.Error(err)
+	}
 }
 
 func (sv *server) get(s network.Stream, req *RequestMessage) {
-	res := &storepb.StoreResponse{}
-	v, err := sv.ds.Get(ds.NewKey(reqMsg.GetKey()))
+	res := &ReplyMessage{}
+	v, err := sv.ds.Get(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
-			res.Code = storepb.ErrCode_NotFound
+			res.Code = ErrNotFound
 		} else {
-			res.Code = storepb.ErrCode_Others
+			res.Code = ErrOthers
 		}
 		res.Msg = err.Error()
 	} else {
 		res.Value = v
 	}
-	res.Id = reqMsg.Id
-	sv.sendMsg(s, res)
+	if err := WriteReplyMsg(s, res); err != nil {
+		logging.Error(err)
+	}
 }
 
 func (sv *server) delete(s network.Stream, req *RequestMessage) {
-	res := &storepb.StoreResponse{}
-	err := sv.ds.Delete(ds.NewKey(key))
+	res := &ReplyMessage{}
+	err := sv.ds.Delete(ds.NewKey(req.Key))
 	if err != nil {
-		res.Code = storepb.ErrCode_Others
+		res.Code = ErrOthers
 		res.Msg = err.Error()
 	}
-	sv.sendMsg(s, res)
+	if err := WriteReplyMsg(s, res); err != nil {
+		logging.Error(err)
+	}
 }
