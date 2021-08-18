@@ -82,25 +82,31 @@ func (cl *client) Put(key string, value []byte) error {
 }
 
 func (cl *client) Delete(key string) error {
-	err := cl.ConnectTarget()
+	_ = cl.ConnectTarget()
+
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
 		return err
 	}
+	defer s.Close()
 
-	req := &storepb.StoreRequest{
+	req := &RequestMessage{
 		Key:    key,
-		Action: storepb.Action_Delete,
+		Action: ActDelete,
+	}
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return err
 	}
 
-	res := make(chan *storepb.StoreResponse)
-	cl.SendMessage(cl.ctx, req, res)
+	reply := &ReplyMessage{}
 
-	resMsg := <-res
-	if resMsg.GetCode() != storepb.ErrCode_None {
-		if resMsg.GetCode() == storepb.ErrCode_NotFound {
-			return nil
-		}
-		return xerrors.New(resMsg.GetMsg())
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Error(err)
+		return err
+	}
+	if reply.Code != ErrNone {
+		return xerrors.New(reply.Msg)
 	}
 	return nil
 }
