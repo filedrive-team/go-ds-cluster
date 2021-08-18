@@ -2,8 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
@@ -11,39 +9,27 @@ import (
 	ggio "github.com/gogo/protobuf/io"
 	ds "github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"golang.org/x/xerrors"
-	"google.golang.org/protobuf/proto"
 )
 
 type client struct {
-	ctx           context.Context
-	src           host.Host
-	target        peer.AddrInfo
-	connected     bool
-	protocol      protocol.ID
-	protocolReply protocol.ID
-	counter       int
-	taskMap       map[string]chan *storepb.StoreResponse
+	ctx       context.Context
+	src       host.Host
+	target    peer.AddrInfo
+	connected bool
+	protocol  protocol.ID
 }
 
-func NewStoreClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid, replyPid protocol.ID) core.DataNodeClient {
+func NewStoreClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid protocol.ID) core.DataNodeClient {
 	return &client{
-		ctx:           ctx,
-		src:           src,
-		target:        target,
-		protocol:      pid,
-		protocolReply: replyPid,
-		taskMap:       make(map[string]chan *storepb.StoreResponse),
+		ctx:      ctx,
+		src:      src,
+		target:   target,
+		protocol: pid,
 	}
-}
-
-func (cl *client) nextId() string {
-	cl.counter++
-	return fmt.Sprintf("id-%d", cl.counter)
 }
 
 func (cl *client) Close() error {
@@ -63,132 +49,19 @@ func (cl *client) ConnectTarget() error {
 	return nil
 }
 
-func (cl *client) SetHandle() {
-	go func() {
-		cl.src.SetStreamHandler(cl.protocolReply, func(s network.Stream) {
-			defer s.Close()
-			logging.Info("client incoming stream")
-			resMsg := &storepb.StoreResponse{}
-			buf, err := ioutil.ReadAll(s)
-			if err != nil {
-				logging.Infof("server read buf error %v", err)
-				return
-			}
+func (cl *client) Put(key string, value []byte) error {
+	_ = cl.ConnectTarget()
 
-			err = proto.Unmarshal(buf, resMsg)
-			if err != nil {
-				logging.Infof("server proto unmarshal error %v", resMsg)
-				return
-			}
-
-			if ch, ok := cl.taskMap[resMsg.Id]; ok {
-				delete(cl.taskMap, resMsg.Id)
-				ch <- resMsg
-			} else {
-				logging.Warn(resMsg)
-			}
-		})
-	}()
-}
-
-func (cl *client) SendMessage(ctx context.Context, req *storepb.StoreRequest, res chan *storepb.StoreResponse) {
-	//go func() {
-	resMsg := new(storepb.StoreResponse)
 	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
-		resMsg.Code = storepb.ErrCode_Others
-		resMsg.Msg = err.Error()
-		res <- resMsg
-		return
-	}
-	logging.Info("set up stream to target")
-	writer := ggio.NewFullWriter(s)
-	err = writer.WriteMsg(req)
-	if err != nil {
-		s.Reset()
-		resMsg.Code = storepb.ErrCode_Others
-		resMsg.Msg = err.Error()
-		res <- resMsg
-		return
+		return err
 	}
 	defer s.Close()
-	//defer writer.Close()
-	logging.Info("finish write to stream")
-	go func() {
 
-		logging.Info("start to read reply")
-		buf, err := ioutil.ReadAll(s)
-		if err != nil {
-			logging.Infof("client read response error %v", err)
-			resMsg.Code = storepb.ErrCode_Others
-			resMsg.Msg = err.Error()
-			res <- resMsg
-			return
-		}
-
-		err = proto.Unmarshal(buf, resMsg)
-		if err != nil {
-			logging.Infof("client proto unmarshal error %v", err)
-			resMsg.Code = storepb.ErrCode_Others
-			resMsg.Msg = err.Error()
-			res <- resMsg
-			return
-		}
-		logging.Infof("got reply from server %v", resMsg)
-		res <- resMsg
-	}()
-	//}()
-}
-
-func (cl *client) Send(ctx context.Context, req *storepb.StoreRequest, s network.Stream) error {
-	//resMsg := new(storepb.StoreResponse)
-
-	writer := ggio.NewFullWriter(s)
-	err := writer.WriteMsg(req)
-	if err != nil {
-		return err
-	}
-
-	logging.Info("client finish write to stream")
-
-	// go func() {
-	// 	//defer s.Close()
-	// 	time.Sleep(time.Second)
-	// 	logging.Info("client start to read reply")
-	// 	buf, err := ioutil.ReadAll(s)
-	// 	if err != nil {
-	// 		return
-	// 	}
-
-	// 	err = proto.Unmarshal(buf, resMsg)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// }()
-	return nil
-
-}
-
-func (cl *client) Put(key string, value []byte) error {
-	err := cl.ConnectTarget()
-	if err != nil {
-		return err
-	}
-	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
-	if err != nil {
-		return err
-	}
-
-	req := &storepb.StoreRequest{
+	req := &RequestMessage{
 		Key:    key,
 		Value:  value,
-		Action: storepb.Action_Put,
-	}
-
-	writer := ggio.NewFullWriter(s)
-	err = writer.WriteMsg(req)
-	if err != nil {
-		return err
+		Action: ActPut,
 	}
 
 	logging.Info("client finish write to stream")

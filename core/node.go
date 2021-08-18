@@ -13,7 +13,6 @@ type DataNodeClient interface {
 
 	ConnectTarget() error
 	IsTargetConnected() bool
-	SetHandle()
 	Close() error
 }
 
