@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
+	xerrors "golang.org/x/xerrors"
 )
 
 func TestP2P(t *testing.T) {
@@ -104,36 +106,33 @@ func TestDataNode(t *testing.T) {
 	memStore := ds.NewMapDatastore()
 	defer memStore.Close()
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_REQUEST_V1, PROTOCOL_REPLY_V1, memStore)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
 	defer server.Close()
 	go server.Serve()
 
-	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_REQUEST_V1, PROTOCOL_REPLY_V1)
+	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_V1)
 	defer client.Close()
-	go client.SetHandle()
 
-	keep := make(chan struct{})
-	go func() {
-		defer func() {
-			keep <- struct{}{}
-		}()
-		//err = client.Put("winner", []byte("Leo is a good boy!"))
-		b, err := client.Get("winner")
-		if err != nil {
-			t.Error(err)
-		}
-		logging.Info(b)
+	err = client.Put("winner", []byte("Leo is a good boy!"))
+	if err != nil {
+		t.Error(err)
+	}
 
-	}()
-	<-keep
-	t.Fail()
-	// size, err := client.GetSize("winner")
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// if size != 3 {
-	// 	t.Fatal(xerrors.New("size not match"))
-	// }
+	size, err := client.GetSize("winner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if size != 18 {
+		t.Fatal(xerrors.New("size not match"))
+	}
+
+	b, err := client.Get("winner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(b, []byte("Leo is a good boy!")) {
+		t.Error("content not match")
+	}
 }
 
 func makeBasicHost(listenPort int) (host.Host, error) {
