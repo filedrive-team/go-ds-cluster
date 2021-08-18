@@ -143,27 +143,34 @@ func (cl *client) Get(key string) (value []byte, err error) {
 }
 
 func (cl *client) Has(key string) (exists bool, err error) {
-	err = cl.ConnectTarget()
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
 		return false, err
 	}
-
-	req := &storepb.StoreRequest{
+	req := &RequestMessage{
 		Key:    key,
-		Action: storepb.Action_Has,
+		Action: ActHas,
+	}
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return false, err
 	}
 
-	res := make(chan *storepb.StoreResponse)
-	cl.SendMessage(cl.ctx, req, res)
+	reply := &ReplyMessage{}
 
-	resMsg := <-res
-	if resMsg.GetCode() != storepb.ErrCode_None {
-		if resMsg.GetCode() == storepb.ErrCode_NotFound {
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Error(err)
+		return false, err
+	}
+	if reply.Code != ErrNone {
+		if reply.Code == ErrNotFound {
 			return false, nil
 		}
-		return false, xerrors.New(resMsg.GetMsg())
+		return false, xerrors.New(reply.Msg)
 	}
-	return resMsg.GetHas(), nil
+
+	return reply.Exists, nil
 }
 
 func (cl *client) GetSize(key string) (size int, err error) {
