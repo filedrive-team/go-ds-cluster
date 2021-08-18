@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
-	storepb "github.com/filedrive-team/go-ds-cluster/p2p/store/pb"
 	ds "github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -116,6 +115,7 @@ func (cl *client) Get(key string) (value []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	defer s.Close()
 
 	req := &RequestMessage{
 		Key:    key,
@@ -148,6 +148,8 @@ func (cl *client) Has(key string) (exists bool, err error) {
 	if err != nil {
 		return false, err
 	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Action: ActHas,
@@ -174,25 +176,35 @@ func (cl *client) Has(key string) (exists bool, err error) {
 }
 
 func (cl *client) GetSize(key string) (size int, err error) {
-	err = cl.ConnectTarget()
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
 		return -1, err
 	}
+	defer s.Close()
 
-	req := &storepb.StoreRequest{
+	req := &RequestMessage{
 		Key:    key,
-		Action: storepb.Action_GetSize,
+		Action: ActGetSize,
 	}
 
-	res := make(chan *storepb.StoreResponse)
-	cl.SendMessage(cl.ctx, req, res)
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return -1, err
+	}
 
-	resMsg := <-res
-	if resMsg.GetCode() != storepb.ErrCode_None {
-		if resMsg.GetCode() == storepb.ErrCode_NotFound {
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Error(err)
+		return -1, err
+	}
+	if reply.Code != ErrNone {
+		if reply.Code == ErrNotFound {
 			return -1, ds.ErrNotFound
 		}
-		return -1, xerrors.New(resMsg.GetMsg())
+		return -1, xerrors.New(reply.Msg)
 	}
-	return int(resMsg.GetSize()), nil
+
+	return int(reply.Size), nil
 }
