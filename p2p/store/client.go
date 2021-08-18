@@ -2,11 +2,9 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
 	storepb "github.com/filedrive-team/go-ds-cluster/p2p/store/pb"
-	ggio "github.com/gogo/protobuf/io"
 	ds "github.com/ipfs/go-datastore"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -112,50 +110,36 @@ func (cl *client) Delete(key string) error {
 }
 
 func (cl *client) Get(key string) (value []byte, err error) {
-	err = cl.ConnectTarget()
-	if err != nil {
-		return nil, err
-	}
+	_ = cl.ConnectTarget()
 
 	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
 		return nil, err
 	}
 
-	req := &storepb.StoreRequest{
+	req := &RequestMessage{
 		Key:    key,
-		Action: storepb.Action_Get,
-		Id:     cl.nextId(),
+		Action: ActGet,
 	}
 
-	writer := ggio.NewFullWriter(s)
-	err = writer.WriteMsg(req)
-	if err != nil {
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
 		return nil, err
 	}
 
-	logging.Info("client finish write to stream")
+	reply := &ReplyMessage{}
 
-	resC := make(chan *storepb.StoreResponse)
-	cl.taskMap[req.Id] = resC
-
-	// res := make(chan *storepb.StoreResponse)
-	// cl.SendMessage(cl.ctx, req, res)
-
-	select {
-	case <-cl.ctx.Done():
-		return nil, cl.ctx.Err()
-	case <-time.After(time.Second):
-		return nil, xerrors.Errorf("time out")
-	case resMsg := <-resC:
-		if resMsg.GetCode() != storepb.ErrCode_None {
-			if resMsg.GetCode() == storepb.ErrCode_NotFound {
-				return nil, ds.ErrNotFound
-			}
-			return nil, xerrors.New(resMsg.GetMsg())
-		}
-		return resMsg.GetValue(), nil
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Error(err)
+		return nil, err
 	}
+	if reply.Code != ErrNone {
+		if reply.Code == ErrNotFound {
+			return nil, ds.ErrNotFound
+		}
+		return nil, xerrors.New(reply.Msg)
+	}
+	return reply.Value, nil
 }
 
 func (cl *client) Has(key string) (exists bool, err error) {
