@@ -21,11 +21,9 @@ var writeDeadline = time.Second * 5
 
 func ReadRequestMsg(s network.Stream, msg *RequestMessage) error {
 	if err := s.SetReadDeadline(time.Now().Add(readDeadline)); err != nil {
-		_ = s.Conn().Close()
 		return err
 	}
 	if err := cborutil.ReadCborRPC(s, msg); err != nil {
-		_ = s.Conn().Close()
 		return err
 	}
 	return nil
@@ -33,11 +31,9 @@ func ReadRequestMsg(s network.Stream, msg *RequestMessage) error {
 
 func WriteReplyMsg(s network.Stream, msg *ReplyMessage) error {
 	if err := s.SetWriteDeadline(time.Now().Add(writeDeadline)); err != nil {
-		_ = s.Conn().Close()
 		return err
 	}
 	if err := cborutil.WriteCborRPC(s, msg); err != nil {
-		_ = s.Conn().Close()
 		return err
 	}
 	return nil
