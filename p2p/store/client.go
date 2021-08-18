@@ -63,39 +63,21 @@ func (cl *client) Put(key string, value []byte) error {
 		Value:  value,
 		Action: ActPut,
 	}
-
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return err
+	}
 	logging.Info("client finish write to stream")
-	// keep := make(chan struct{})
 
-	// go func() error {
-	// 	defer func() {
-	// 		keep <- struct{}{}
-	// 	}()
-	// 	defer s.Close()
-	// 	_ = s.SetReadDeadline(time.Now().Add(time.Second * 2))
-	// 	logging.Info("client start to read reply")
-	// 	buf, err := ioutil.ReadAll(s)
-	// 	if err != nil {
-	// 		logging.Info(err)
-	// 		return err
-	// 	}
-	// 	resMsg := &storepb.StoreResponse{}
-	// 	err = proto.Unmarshal(buf, resMsg)
-	// 	if err != nil {
-	// 		logging.Info(err)
-	// 		return err
-	// 	}
-	// 	logging.Info(resMsg)
-	// 	return nil
-	// }()
-	// <-keep
-	// err = cl.Send(cl.ctx, req, s)
-	// if err != nil {
-	// 	return err
-	// }
-	// if res.GetCode() != storepb.ErrCode_None {
-	// 	return xerrors.Errorf("%v", res.GetMsg())
-	// }
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Error(err)
+		return err
+	}
+	if reply.Code != ErrNone {
+		return xerrors.New(reply.Msg)
+	}
 	return nil
 }
 
