@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	Identity  Identity
-	Addresses Addresses
-	ConfPath  string
+	Identity  Identity  `json:"identity"`
+	Addresses Addresses `json:"addresses"`
+	ConfPath  string    `json:"conf_path"`
 }
 
 type Identity struct {
