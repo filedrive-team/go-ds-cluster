@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/filedrive-team/go-ds-cluster/shard"
 	"go.uber.org/fx"
 )
 
 type Config struct {
-	Identity  Identity  `json:"identity"`
-	Addresses Addresses `json:"addresses"`
-	ConfPath  string    `json:"conf_path"`
+	Identity  Identity     `json:"identity"`
+	Addresses Addresses    `json:"addresses"`
+	ConfPath  string       `json:"conf_path"`
+	Nodes     []shard.Node `json:"nodes"`
 }
 
 type Identity struct {
