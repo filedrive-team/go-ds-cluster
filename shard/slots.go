@@ -1,7 +1,9 @@
 package shard
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"golang.org/x/xerrors"
 )
@@ -20,13 +22,13 @@ type SlotsManager struct {
 }
 
 type Node struct {
-	ID    string
-	Slots SlotsRange
+	ID    string     `json:"id"`
+	Slots SlotsRange `json:"slots"`
 }
 
 type SlotsRange struct {
-	Start uint16
-	End   uint16
+	Start uint16 `json:"start"`
+	End   uint16 `json:"end"`
 }
 
 func InitSlotManager(startNodes []Node) *SlotsManager {
@@ -43,7 +45,7 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 	if remine > 0 {
 		sm.rangeFactor = float64(nodeLen) / float64(remine)
 	}
-	fmt.Printf("remine %d, rf: %f\n", remine, sm.rangeFactor)
+	//fmt.Printf("remine %d, rf: %f\n", remine, sm.rangeFactor)
 
 	var factorNext float64 = 0
 	for i := range sm.slotsRange {
@@ -55,8 +57,8 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 		}
 
 		end = start + sm.rangeLen - 1
-		fmt.Println(factorNext)
-		fmt.Printf("l1: %f l2 %f l3: %f \n", float64(i+1), (factorNext+0.5)*sm.rangeFactor, float64(i+1)-(factorNext+0.5)*sm.rangeFactor)
+		//fmt.Println(factorNext)
+		//fmt.Printf("l1: %f l2 %f l3: %f \n", float64(i+1), (factorNext+0.5)*sm.rangeFactor, float64(i+1)-(factorNext+0.5)*sm.rangeFactor)
 		if remine > 0 && float64(i+1)-(factorNext+0.5)*sm.rangeFactor > 0 {
 			factorNext = factorNext + 1
 			end++
@@ -74,6 +76,16 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 	}
 
 	return sm
+}
+
+func RestoreSlotsManager(nds []Node) (*SlotsManager, error) {
+	startNds := make([]Node, len(nds))
+	copy(startNds, nds)
+	sm := InitSlotManager(startNds)
+	if !reflect.DeepEqual(sm.nodes, nds) {
+		return nil, xerrors.Errorf("restore slots manager failed. expected %v, got %v", nds, sm.nodes)
+	}
+	return sm, nil
 }
 
 func (sm *SlotsManager) NodeByKey(key string) (*Node, error) {
@@ -105,13 +117,18 @@ func (sm *SlotsManager) NodeBySlot(n uint16) (*Node, error) {
 func (sm *SlotsManager) Check() {
 	fmt.Printf("nodes: %d\n", sm.nodesNum)
 	fmt.Printf("range len: %d\n", sm.rangeLen)
-	for i, sr := range sm.slotsRange {
-		fmt.Printf("slot range %d start: %d, end: %d, num: %d\n", i, sr.Start, sr.End, sr.End-sr.Start+1)
-	}
-	for k, v := range sm.nodeMap {
-		fmt.Printf("node map key: %d, node id: %s \n", k, v.ID)
-	}
-	for _, n := range sm.nodes {
-		fmt.Printf("node id: %s\n", n.ID)
-	}
+	// for i, sr := range sm.slotsRange {
+	// 	fmt.Printf("slot range %d start: %d, end: %d, num: %d\n", i, sr.Start, sr.End, sr.End-sr.Start+1)
+	// }
+	srb, _ := json.Marshal(sm.slotsRange)
+	fmt.Printf("%s\n", srb)
+	// for k, v := range sm.nodeMap {
+	// 	fmt.Printf("node map key: %d, node id: %s \n", k, v.ID)
+	// }
+	nb, _ := json.Marshal(sm.nodes)
+	fmt.Printf("%s\n", nb)
+	// for _, n := range sm.nodes {
+	// 	fmt.Printf("node id: %s\n", n.ID)
+	// }
+
 }
