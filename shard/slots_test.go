@@ -98,7 +98,6 @@ func TestInitSlotsManager(t *testing.T) {
 	if !isEqualRange(sm7.slotsRange, expectedSlotsRanges[7]) {
 		t.Fatal(errmsg)
 	}
-
 }
 
 func TestNodeByKey(t *testing.T) {
