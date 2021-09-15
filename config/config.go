@@ -9,10 +9,15 @@ import (
 )
 
 type Config struct {
-	Identity  Identity     `json:"identity"`
-	Addresses Addresses    `json:"addresses"`
-	ConfPath  string       `json:"conf_path"`
-	Nodes     []shard.Node `json:"nodes"`
+	Identity  Identity  `json:"identity"`
+	Addresses Addresses `json:"addresses"`
+	ConfPath  string    `json:"conf_path"`
+	Nodes     []Node    `json:"nodes"`
+}
+
+type Node struct {
+	shard.Node
+	Swarm []string `json:"swarm"`
 }
 
 type Identity struct {
@@ -25,7 +30,7 @@ type Addresses struct {
 }
 
 func LoadConfig(path string) (fx.Option, error) {
-	cfg, err := loadConfig(path + "/config.json")
+	cfg, err := ReadConfig(path + "/config.json")
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +40,7 @@ func LoadConfig(path string) (fx.Option, error) {
 	}), nil
 }
 
-func loadConfig(path string) (*Config, error) {
+func ReadConfig(path string) (*Config, error) {
 	cfg := new(Config)
 	b, err := ioutil.ReadFile(path)
 	if err != nil {

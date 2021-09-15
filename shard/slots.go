@@ -3,6 +3,7 @@ package shard
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"golang.org/x/xerrors"
 )
@@ -75,6 +76,16 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 	}
 
 	return sm
+}
+
+func RestoreSlotsManager(nds []Node) (*SlotsManager, error) {
+	startNds := make([]Node, len(nds))
+	copy(startNds, nds)
+	sm := InitSlotManager(startNds)
+	if !reflect.DeepEqual(sm.nodes, nds) {
+		return nil, xerrors.Errorf("restore slots manager failed. expected %v, got %v", nds, sm.nodes)
+	}
+	return sm, nil
 }
 
 func (sm *SlotsManager) NodeByKey(key string) (*Node, error) {
