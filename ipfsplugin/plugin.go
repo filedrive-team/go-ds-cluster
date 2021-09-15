@@ -3,6 +3,7 @@ package ipfsplugin
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/ipfs/go-ipfs/plugin"
 	"github.com/ipfs/go-ipfs/repo"
@@ -62,7 +63,11 @@ func (c *datastoreConfig) DiskSpec() fsrepo.DiskSpec {
 }
 
 func (c *datastoreConfig) Create(path string) (repo.Datastore, error) {
-	cfg, err := clustercfg.ReadConfig(c.cfg)
+	p := c.cfg
+	if !filepath.IsAbs(p) {
+		p = filepath.Join(path, p)
+	}
+	cfg, err := clustercfg.ReadConfig(p)
 	if err != nil {
 		return nil, err
 	}
