@@ -48,6 +48,7 @@ func (cl *client) ConnectTarget() error {
 
 func (cl *client) Put(key string, value []byte) error {
 	_ = cl.ConnectTarget()
+	logging.Infof("put key: %s", key)
 
 	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {

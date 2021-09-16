@@ -99,7 +99,6 @@ func TestDataNode(t *testing.T) {
 
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
-	defer memStore.Close()
 
 	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
 	defer server.Close()

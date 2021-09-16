@@ -35,7 +35,6 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 	if err != nil {
 		return nil, err
 	}
-	priv.Bytes()
 
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(cfg.Addresses.Swarm...),

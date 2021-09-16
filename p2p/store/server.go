@@ -27,7 +27,14 @@ func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds ds.Dat
 }
 
 func (sv *server) Close() error {
-	return sv.host.Close()
+	var err error
+	if err = sv.ds.Close(); err != nil {
+		logging.Error(err)
+	}
+	if err = sv.host.Close(); err != nil {
+		logging.Error(err)
+	}
+	return err
 }
 
 func (sv *server) Serve() {
