@@ -1,7 +1,9 @@
 package shard
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -171,5 +173,30 @@ func TestNodeBySlot(t *testing.T) {
 	}
 	if nd.Slots.Start != 14043 && nd.Slots.End != 16383 {
 		t.Fatal("unexpected node")
+	}
+}
+
+func TestRestoreSlotsManager(t *testing.T) {
+	nodesCfg := `
+	[
+        {"id":"12D3KooWM1dWYafTFGJc6Kq5XYX6RRbQTCbZ58kXFWsjdHREJtCB","slots":{"start":0,"end":5460}},
+        {"id":"12D3KooWQHrRAyak1wYc9u27Tu9HnAqkafdWhZkaohSP834igaiZ","slots":{"start":5461,"end":10922}},
+        {"id":"12D3KooWQWLzFTEE9XD2oZph4UifRkE4BWiapsqHjWMnB1R5WRtS","slots":{"start":10923,"end":16383}}
+    ]
+	`
+	nodes := make([]Node, 0)
+	err := json.Unmarshal([]byte(nodesCfg), &nodes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nodescp := make([]Node, len(nodes))
+	copy(nodescp, nodes)
+	sm, err := RestoreSlotsManager(nodescp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(sm.nodes, nodes) {
+		t.Logf("expected nodes: %v, got %v", nodes, sm.nodes)
+		t.Fatal("unexpected nodes restored")
 	}
 }
