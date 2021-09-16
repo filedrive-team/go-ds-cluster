@@ -3,16 +3,11 @@ package store
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"fmt"
 	"testing"
 
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	ds "github.com/ipfs/go-datastore"
 	log "github.com/ipfs/go-log/v2"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
@@ -133,19 +128,4 @@ func TestDataNode(t *testing.T) {
 	if !bytes.Equal(b, []byte("Leo is a good boy!")) {
 		t.Error("content not match")
 	}
-}
-
-func makeBasicHost(listenPort int) (host.Host, error) {
-	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
-		libp2p.Identity(priv),
-		libp2p.DisableRelay(),
-	}
-
-	return libp2p.New(context.Background(), opts...)
 }
