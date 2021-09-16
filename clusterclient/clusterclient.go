@@ -10,10 +10,8 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	log "github.com/ipfs/go-log/v2"
-	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	crypto "github.com/libp2p/go-libp2p-crypto"
 	ma "github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 )
@@ -29,7 +27,7 @@ type ClusterClient struct {
 }
 
 func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, error) {
-	h, err := makeHost(cfg)
+	h, err := store.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -163,26 +161,6 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 
 func (d *ClusterClient) Batch() (ds.Batch, error) {
 	return ds.NewBasicBatch(d), nil
-}
-
-func makeHost(cfg *config.Config) (host.Host, error) {
-	priv, err := crypto.UnmarshalPrivateKey(cfg.Identity.SK)
-	if err != nil {
-		return nil, err
-	}
-	priv.Bytes()
-
-	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(cfg.Addresses.Swarm...),
-		libp2p.Identity(priv),
-		libp2p.DisableRelay(),
-	}
-	h, err := libp2p.New(context.Background(), opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return h, nil
 }
 
 func makeNodeMap(ctx context.Context, host host.Host, cfg *config.Config) (map[string]core.DataNodeClient, error) {
