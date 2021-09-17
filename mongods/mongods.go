@@ -73,7 +73,28 @@ func (m *MongoDS) Close() error {
 }
 
 func (m *MongoDS) Query(q dsq.Query) (dsq.Results, error) {
-	return nil, nil
+	ent, errChan, err := m.dbclient.query(m.ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	nextValue := func() (dsq.Result, bool) {
+		select {
+		case item, ok := <-ent:
+			if !ok {
+				return dsq.Result{}, false
+			}
+			return dsq.Result{Entry: *item}, true
+		case err := <-errChan:
+			return dsq.Result{Error: err}, false
+		}
+	}
+
+	return dsq.ResultsFromIterator(q, dsq.Iterator{
+		Close: func() error {
+			return nil
+		},
+		Next: nextValue,
+	}), nil
 }
 
 func (m *MongoDS) Batch() (ds.Batch, error) {

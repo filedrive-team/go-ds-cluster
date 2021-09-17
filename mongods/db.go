@@ -7,9 +7,12 @@ import (
 	"time"
 
 	ds "github.com/ipfs/go-datastore"
+	dsq "github.com/ipfs/go-datastore/query"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -206,6 +209,80 @@ func (db *dbclient) getSize(ctx context.Context, key ds.Key) (int, error) {
 		return -1, err
 	}
 	return ref.Size, nil
+}
+
+func (db *dbclient) query(ctx context.Context, q dsq.Query) (chan *dsq.Entry, chan error, error) {
+	if q.Orders != nil || q.Filters != nil {
+		return nil, nil, xerrors.Errorf("mongods currently not support orders or filters")
+	}
+
+	blockColl := db.blockColl()
+	refColl := db.refColl()
+
+	out := make(chan *dsq.Entry)
+	errChan := make(chan error)
+
+	offset := int64(q.Offset)
+	limit := int64(q.Limit)
+	opts := options.FindOptions{}
+	if offset > 0 {
+		opts.Skip = &offset
+	}
+	if limit > 0 {
+		opts.Limit = &limit
+	}
+
+	cur, err := refColl.Find(ctx, bson.M{
+		"_id": primitive.Regex{
+			Pattern: "^" + q.Prefix,
+			Options: "i",
+		},
+	}, &opts)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	logging.Info("mongods query: got mongo cursor")
+
+	go func(ctx context.Context, cur *mongo.Cursor, out chan *dsq.Entry, errChan chan error) {
+		defer cur.Close(ctx)
+		defer close(out)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				if cur.Next(ctx) {
+					ref := &BlockRef{}
+					err := cur.Decode(ref)
+					if err != nil {
+						errChan <- err
+						return
+					}
+					ent := &dsq.Entry{
+						Key:  ref.ID,
+						Size: int(ref.Size),
+					}
+					if !q.KeysOnly {
+						b := &Block{}
+						err = blockColl.FindOne(ctx, bson.M{"_id": ref.Ref}).Decode(b)
+						if err != nil {
+							errChan <- err
+							return
+						}
+						ent.Value = b.Value
+					}
+					out <- ent
+				} else {
+					return
+				}
+			}
+		}
+
+	}(ctx, cur, out, errChan)
+
+	return out, errChan, nil
 }
 
 func sha256String(d []byte) string {
