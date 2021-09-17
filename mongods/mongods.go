@@ -12,7 +12,19 @@ var logging = log.Logger("mongods")
 var _ ds.Batching = (*MongoDS)(nil)
 
 type MongoDS struct {
-	ctx context.Context
+	ctx      context.Context
+	dbclient *dbclient
+}
+
+func NewMongoDS(ctx context.Context, cfg *Config) (*MongoDS, error) {
+	client, err := newDBClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &MongoDS{
+		ctx:      ctx,
+		dbclient: client,
+	}, nil
 }
 
 func (m *MongoDS) Put(k ds.Key, value []byte) error {
