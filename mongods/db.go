@@ -18,6 +18,7 @@ import (
 const (
 	db_uri          = "mongodb://localhost:27017"
 	db_name         = "mongods"
+	db_test_name    = "mongods_test"
 	block_coll_name = "blocks"
 	ref_coll_name   = "blocks_ref"
 )
