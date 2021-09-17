@@ -151,6 +151,34 @@ func (db *dbclient) put(ctx context.Context, key ds.Key, value []byte) error {
 	return nil
 }
 
+func (db *dbclient) delete(ctx context.Context, key ds.Key) error {
+	blockColl := db.blockColl()
+	refColl := db.refColl()
+
+	var err error
+	kstr := key.String()
+	ref := &BlockRef{}
+	if err = refColl.FindOne(ctx, bson.M{"_id": kstr}).Decode(ref); err != nil {
+		return err
+	}
+	// delete record on ref collection
+	if _, err = refColl.DeleteOne(ctx, bson.M{"_id": kstr}); err != nil {
+		return err
+	}
+	// check if has other ref point to the same value
+	rc, err := refColl.CountDocuments(ctx, bson.M{"ref": ref.Ref})
+	if err != nil {
+		return err
+	}
+	// delete record in block collection if rc is 0
+	if rc < 1 {
+		if _, err = blockColl.DeleteOne(ctx, bson.M{"_id": ref.Ref}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 func sha256String(d []byte) string {
 	return fmt.Sprintf("%x", sha256.Sum256(d))
 }

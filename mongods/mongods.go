@@ -44,7 +44,7 @@ func (m *MongoDS) GetSize(k ds.Key) (int, error) {
 }
 
 func (m *MongoDS) Delete(k ds.Key) error {
-	return nil
+	return m.dbclient.delete(m.ctx, k)
 }
 
 func (m *MongoDS) Sync(ds.Key) error {
