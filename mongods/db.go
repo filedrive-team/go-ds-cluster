@@ -179,6 +179,35 @@ func (db *dbclient) delete(ctx context.Context, key ds.Key) error {
 
 	return nil
 }
+
+func (db *dbclient) get(ctx context.Context, key ds.Key) ([]byte, error) {
+	blockColl := db.blockColl()
+	refColl := db.refColl()
+
+	ref := &BlockRef{}
+	if err := refColl.FindOne(ctx, bson.M{"_id": key.String()}).Decode(ref); err != nil {
+		return nil, err
+	}
+	block := &Block{}
+	if err := blockColl.FindOne(ctx, bson.M{"_id": ref.Ref}).Decode(block); err != nil {
+		return nil, err
+	}
+	return block.Value, nil
+}
+
+func (db *dbclient) has(ctx context.Context, key ds.Key) (bool, error) {
+	return db.hasRef(ctx, key.String())
+}
+
+func (db *dbclient) getSize(ctx context.Context, key ds.Key) (int, error) {
+	refColl := db.refColl()
+	ref := &BlockRef{}
+	if err := refColl.FindOne(ctx, bson.M{"_id": key.String()}).Decode(ref); err != nil {
+		return -1, err
+	}
+	return ref.Size, nil
+}
+
 func sha256String(d []byte) string {
 	return fmt.Sprintf("%x", sha256.Sum256(d))
 }
