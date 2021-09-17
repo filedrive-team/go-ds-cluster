@@ -6,6 +6,7 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	log "github.com/ipfs/go-log/v2"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var logging = log.Logger("mongods")
@@ -32,19 +33,35 @@ func (m *MongoDS) Put(k ds.Key, value []byte) error {
 }
 
 func (m *MongoDS) Get(k ds.Key) ([]byte, error) {
-	return nil, nil
+	v, err := m.dbclient.get(m.ctx, k)
+	if err == mongo.ErrNoDocuments {
+		return v, ds.ErrNotFound
+	}
+	return v, err
 }
 
 func (m *MongoDS) Has(k ds.Key) (bool, error) {
-	return false, nil
+	has, err := m.dbclient.has(m.ctx, k)
+	if err == nil && !has {
+		return has, ds.ErrNotFound
+	}
+	return has, err
 }
 
 func (m *MongoDS) GetSize(k ds.Key) (int, error) {
-	return 0, nil
+	size, err := m.dbclient.getSize(m.ctx, k)
+	if err == mongo.ErrNoDocuments {
+		return -1, ds.ErrNotFound
+	}
+	return size, err
 }
 
 func (m *MongoDS) Delete(k ds.Key) error {
-	return m.dbclient.delete(m.ctx, k)
+	err := m.dbclient.delete(m.ctx, k)
+	if err == mongo.ErrNoDocuments {
+		return nil
+	}
+	return err
 }
 
 func (m *MongoDS) Sync(ds.Key) error {
