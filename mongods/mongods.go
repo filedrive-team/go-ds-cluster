@@ -28,7 +28,7 @@ func NewMongoDS(ctx context.Context, cfg *Config) (*MongoDS, error) {
 }
 
 func (m *MongoDS) Put(k ds.Key, value []byte) error {
-	return nil
+	return m.dbclient.put(m.ctx, k, value)
 }
 
 func (m *MongoDS) Get(k ds.Key) ([]byte, error) {
@@ -52,7 +52,7 @@ func (m *MongoDS) Sync(ds.Key) error {
 }
 
 func (m *MongoDS) Close() error {
-	return nil
+	return m.dbclient.close()
 }
 
 func (m *MongoDS) Query(q dsq.Query) (dsq.Results, error) {

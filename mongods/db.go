@@ -2,8 +2,12 @@ package mongods
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"time"
 
+	ds "github.com/ipfs/go-datastore"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -81,4 +85,72 @@ func (db *dbclient) blockColl() *mongo.Collection {
 
 func (db *dbclient) refColl() *mongo.Collection {
 	return db.client.Database(db.cfg.DBName).Collection(db.cfg.RefCollName)
+}
+
+func (db *dbclient) hasBlock(ctx context.Context, id string) (bool, error) {
+	blockColl := db.blockColl()
+	err := blockColl.FindOne(ctx, bson.M{"_id": id}).Err()
+
+	if err == nil {
+		return true, nil
+	}
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	}
+	return false, err
+}
+
+func (db *dbclient) hasRef(ctx context.Context, id string) (bool, error) {
+	refColl := db.refColl()
+	err := refColl.FindOne(ctx, bson.M{"_id": id}).Err()
+
+	if err == nil {
+		return true, nil
+	}
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	}
+	return false, err
+}
+
+func (db *dbclient) put(ctx context.Context, key ds.Key, value []byte) error {
+	blockColl := db.blockColl()
+	refColl := db.refColl()
+
+	blockID := sha256String(value)
+	kstr := key.String()
+	// check if has record in block collection
+	hasBlock, err := db.hasBlock(ctx, blockID)
+	if err != nil {
+		return err
+	}
+	if !hasBlock {
+		if _, err = blockColl.InsertOne(ctx, &Block{
+			ID:        blockID,
+			Value:     value,
+			CreatedAt: time.Now(),
+		}); err != nil {
+			return err
+		}
+	}
+	// check if has record in ref collection
+	hasRef, err := db.hasRef(ctx, kstr)
+	if err != nil {
+		return err
+	}
+	if !hasRef {
+		if _, err = refColl.InsertOne(ctx, &BlockRef{
+			ID:        kstr,
+			Ref:       blockID,
+			Size:      len(value),
+			CreatedAt: time.Now(),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func sha256String(d []byte) string {
+	return fmt.Sprintf("%x", sha256.Sum256(d))
 }
