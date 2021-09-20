@@ -13,8 +13,6 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	log "github.com/ipfs/go-log/v2"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"go.uber.org/fx"
@@ -94,18 +92,7 @@ func ProtocolID() protocol.ID {
 }
 
 func BasicHost(lc fx.Lifecycle, cfg *config.Config) (host.Host, error) {
-	priv, err := crypto.UnmarshalPrivateKey(cfg.Identity.SK)
-	if err != nil {
-		return nil, err
-	}
-	priv.Bytes()
-
-	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(cfg.Addresses.Swarm...),
-		libp2p.Identity(priv),
-		libp2p.DisableRelay(),
-	}
-	h, err := libp2p.New(context.Background(), opts...)
+	h, err := store.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}
