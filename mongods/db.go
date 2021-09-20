@@ -30,6 +30,23 @@ type Config struct {
 	RefCollName   string `json:"ref_coll_name"`
 }
 
+func ExtendConf(cfg *Config) *Config {
+	res := DefaultConf()
+	if cfg.Uri != "" {
+		res.Uri = cfg.Uri
+	}
+	if cfg.DBName != "" {
+		res.DBName = cfg.DBName
+	}
+	if cfg.BlockCollName != "" {
+		res.BlockCollName = cfg.BlockCollName
+	}
+	if cfg.RefCollName != "" {
+		res.RefCollName = cfg.RefCollName
+	}
+	return res
+}
+
 func DefaultConf() *Config {
 	return &Config{
 		Uri:           db_uri,
