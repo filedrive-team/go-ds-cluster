@@ -13,6 +13,109 @@ import (
 	log "github.com/ipfs/go-log/v2"
 )
 
+type Pair struct {
+	Key   string
+	Value []byte
+}
+
+var tdata = []Pair{
+	{"Filedrive", []byte("Platform for better use of datasets on web3")},
+	{"FileDAG", []byte("Destributed storage provider")},
+	{"afsis", []byte("Africa Soil Information Service (AfSIS) Soil Chemistry")},
+	{"tablestore", []byte("AI2 Tablestore (November 2015 Snapshot)")},
+	{"tuple-kb", []byte("Aristo Tuple KB")},
+	{"amazon-conversational-product-search", []byte("Voice-based refinements of product search")},
+	{"Amazon-PQA", []byte("Amazon product questions and their answers, along with the public product information.")},
+	{"amazon-reviews-ml", []byte("The Multilingual Amazon Reviews Corpus")},
+	{"answer-reformulation-pds", []byte("Answer Reformulation")},
+	{"asr-error-robustness", []byte("Automatic Speech Recognition (ASR) Error Robustness")},
+	{"dataworld-linked-acs", []byte("U.S. Census ACS PUMS")},
+	{"civic-aws-opendata", []byte("CIViC (Clinical Interpretation of Variants in Cancer)")},
+	{"code-mixed-ner", []byte("Multilingual Name Entity Recognition (NER) Datasets with Gazetteer")},
+	{"hrsl-cogs", []byte("High Resolution Population Density Maps + Demographic Estimates by CIESIN and Facebook")},
+	{"dialoglue", []byte("DialoGLUE: A Natural Language Understanding Benchmark for Task-Oriented Dialogue")},
+	{"fashionlocaltriplets", []byte("Fine-grained localized visual similarity and search for fashion.")},
+	{"fast-ai-imageclas", []byte("Image classification - fast.ai datasets")},
+	{"gdc-fm-ad-phs001179-2-open", []byte("Foundation Medicine Adult Cancer Clinical Dataset (FM-AD)")},
+	{"gdc-hcmi-cmdc-phs001486-2-open", []byte("Human Cancer Models Initiative (HCMI) Cancer Model Development Center")},
+	{"humor-detection-pds", []byte("Humor Detection from Product Question Answering Systems")},
+}
+
+func TestClusterClientByConfGen(t *testing.T) {
+	log.SetLogLevel("*", "info")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+
+	srvCfgs, err := config.GenClusterConf(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cfg := range srvCfgs {
+		srv, err := serverFromCfg(ctx, cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer srv.Close()
+		srv.Serve()
+	}
+
+	clientCfg, err := config.GenClientConf()
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientCfg.Nodes = srvCfgs[1].Nodes
+	client, err := NewClusterClient(ctx, clientCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	for i, item := range tdata {
+		err = client.Put(ds.NewKey(item.Key), item.Value)
+		if err != nil {
+			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
+		}
+	}
+
+	for _, item := range tdata {
+		has, err := client.Has(ds.NewKey(item.Key))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !has {
+			t.Fatalf("should has %s", item.Key)
+		}
+	}
+
+	for _, item := range tdata {
+		size, err := client.GetSize(ds.NewKey(item.Key))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if size != len(item.Value) {
+			t.Fatalf("%s size not match", item.Key)
+		}
+	}
+
+	for _, item := range tdata {
+		v, err := client.Get(ds.NewKey(item.Key))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(v, item.Value) {
+			t.Fatal("retrived value not match")
+		}
+	}
+
+	for _, item := range tdata {
+		err := client.Delete(ds.NewKey(item.Key))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 var c1cfg = `
 {
     "identity": {
@@ -81,34 +184,6 @@ var srv3cfg = `
     ]
 }
 `
-
-type Pair struct {
-	Key   string
-	Value []byte
-}
-
-var tdata = []Pair{
-	{"Filedrive", []byte("Platform for better use of datasets on web3")},
-	{"FileDAG", []byte("Destributed storage provider")},
-	{"afsis", []byte("Africa Soil Information Service (AfSIS) Soil Chemistry")},
-	{"tablestore", []byte("AI2 Tablestore (November 2015 Snapshot)")},
-	{"tuple-kb", []byte("Aristo Tuple KB")},
-	{"amazon-conversational-product-search", []byte("Voice-based refinements of product search")},
-	{"Amazon-PQA", []byte("Amazon product questions and their answers, along with the public product information.")},
-	{"amazon-reviews-ml", []byte("The Multilingual Amazon Reviews Corpus")},
-	{"answer-reformulation-pds", []byte("Answer Reformulation")},
-	{"asr-error-robustness", []byte("Automatic Speech Recognition (ASR) Error Robustness")},
-	{"dataworld-linked-acs", []byte("U.S. Census ACS PUMS")},
-	{"civic-aws-opendata", []byte("CIViC (Clinical Interpretation of Variants in Cancer)")},
-	{"code-mixed-ner", []byte("Multilingual Name Entity Recognition (NER) Datasets with Gazetteer")},
-	{"hrsl-cogs", []byte("High Resolution Population Density Maps + Demographic Estimates by CIESIN and Facebook")},
-	{"dialoglue", []byte("DialoGLUE: A Natural Language Understanding Benchmark for Task-Oriented Dialogue")},
-	{"fashionlocaltriplets", []byte("Fine-grained localized visual similarity and search for fashion.")},
-	{"fast-ai-imageclas", []byte("Image classification - fast.ai datasets")},
-	{"gdc-fm-ad-phs001179-2-open", []byte("Foundation Medicine Adult Cancer Clinical Dataset (FM-AD)")},
-	{"gdc-hcmi-cmdc-phs001486-2-open", []byte("Human Cancer Models Initiative (HCMI) Cancer Model Development Center")},
-	{"humor-detection-pds", []byte("Humor Detection from Product Question Answering Systems")},
-}
 
 func TestClusterClient(t *testing.T) {
 	log.SetLogLevel("*", "info")

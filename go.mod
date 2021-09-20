@@ -12,6 +12,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.5
+	github.com/libp2p/go-libp2p-quic-transport v0.11.2
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/urfave/cli/v2 v2.0.0
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210713220151-be142a5ae1a8
