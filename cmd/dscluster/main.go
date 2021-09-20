@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
+	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
@@ -20,6 +21,7 @@ import (
 
 var logging = log.Logger("dscluster")
 var confpath string
+var mongodb string
 
 func init() {
 	log.SetLogLevelRegex("*", "info")
@@ -27,22 +29,48 @@ func init() {
 
 func main() {
 	flag.StringVar(&confpath, "conf", ".dscluster", "")
+	flag.StringVar(&mongodb, "mongodb", "", "")
 	flag.Parse()
+
+	ctxbg := context.Background()
+	ctxOption := fx.Provide(func() context.Context {
+		return ctxbg
+	})
 
 	confOption, err := config.LoadConfig(confpath)
 	if err != nil {
 		logging.Fatal(err)
 	}
+	var dsOption fx.Option
+	if mongodb != "" {
+		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle) (ds.Datastore, error) {
+			monds, err := mongods.NewMongoDS(ctx, mongods.ExtendConf(&mongods.Config{
+				Uri: mongodb,
+			}))
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return monds.Close()
+				},
+			})
+			return monds, nil
+		})
+	} else {
+		dsOption = fx.Provide(FlatFS)
+	}
+
 	app := fx.New(
+		ctxOption,
 		confOption,
+		dsOption,
 		fx.Provide(
 			BasicHost,
 			ProtocolID,
-			FlatFS,
 		),
 		fx.Invoke(Kickoff),
 	)
-	ctxbg := context.Background()
 
 	startctx, cancel := context.WithTimeout(ctxbg, 5*time.Second)
 	defer cancel()
@@ -68,7 +96,7 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore) {
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			cancel()
+			defer cancel()
 			return server.Close()
 		},
 		OnStart: func(ctx context.Context) error {
