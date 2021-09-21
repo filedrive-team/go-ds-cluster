@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
@@ -43,22 +44,33 @@ var tdata = []Pair{
 
 func TestClusterClientByConfGen(t *testing.T) {
 	log.SetLogLevel("*", "info")
+	cluster_node_num := 3
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
 
-	srvCfgs, err := config.GenClusterConf(3)
+	srvCfgs, err := config.GenClusterConf(cluster_node_num)
 	if err != nil {
 		t.Fatal(err)
 	}
+	var sw sync.WaitGroup
+	sw.Add(cluster_node_num)
 	for _, cfg := range srvCfgs {
-		srv, err := serverFromCfg(ctx, cfg)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer srv.Close()
-		srv.Serve()
+		go func(ctx context.Context, cfg *config.Config) {
+			srv, err := serverFromCfg(ctx, cfg)
+			if err != nil {
+				sw.Done()
+				t.Error(err)
+				return
+			}
+			sw.Done()
+			srv.Serve()
+
+			<-ctx.Done()
+			srv.Close()
+		}(ctx, cfg)
 	}
+	sw.Wait()
 
 	clientCfg, err := config.GenClientConf()
 	if err != nil {
