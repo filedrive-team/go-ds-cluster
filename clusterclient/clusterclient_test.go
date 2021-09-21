@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"sync"
 	"testing"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
@@ -206,91 +205,91 @@ func TestClusterClient(t *testing.T) {
 	}
 }
 
-func TestClusterClientByConfGen(t *testing.T) {
-	log.SetLogLevel("*", "info")
-	cluster_node_num := 3
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	var err error
+// func TestClusterClientByConfGen(t *testing.T) {
+// 	log.SetLogLevel("*", "info")
+// 	cluster_node_num := 3
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	defer cancel()
+// 	var err error
 
-	srvCfgs, err := config.GenClusterConf(cluster_node_num)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var sw sync.WaitGroup
-	sw.Add(cluster_node_num)
-	for _, cfg := range srvCfgs {
-		go func(ctx context.Context, cfg *config.Config) {
-			srv, err := serverFromCfg(ctx, cfg)
-			if err != nil {
-				sw.Done()
-				t.Error(err)
-				return
-			}
-			sw.Done()
-			srv.Serve()
+// 	srvCfgs, err := config.GenClusterConf(cluster_node_num)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	var sw sync.WaitGroup
+// 	sw.Add(cluster_node_num)
+// 	for _, cfg := range srvCfgs {
+// 		go func(ctx context.Context, cfg *config.Config) {
+// 			srv, err := serverFromCfg(ctx, cfg)
+// 			if err != nil {
+// 				sw.Done()
+// 				t.Error(err)
+// 				return
+// 			}
+// 			sw.Done()
+// 			srv.Serve()
 
-			<-ctx.Done()
-			srv.Close()
-		}(ctx, cfg)
-	}
-	sw.Wait()
+// 			<-ctx.Done()
+// 			srv.Close()
+// 		}(ctx, cfg)
+// 	}
+// 	sw.Wait()
 
-	clientCfg, err := config.GenClientConf()
-	if err != nil {
-		t.Fatal(err)
-	}
-	clientCfg.Nodes = srvCfgs[1].Nodes
-	client, err := NewClusterClient(ctx, clientCfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer client.Close()
+// 	clientCfg, err := config.GenClientConf()
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	clientCfg.Nodes = srvCfgs[1].Nodes
+// 	client, err := NewClusterClient(ctx, clientCfg)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	defer client.Close()
 
-	for i, item := range tdata {
-		err = client.Put(ds.NewKey(item.Key), item.Value)
-		if err != nil {
-			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
-		}
-	}
+// 	for i, item := range tdata {
+// 		err = client.Put(ds.NewKey(item.Key), item.Value)
+// 		if err != nil {
+// 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
+// 		}
+// 	}
 
-	for _, item := range tdata {
-		has, err := client.Has(ds.NewKey(item.Key))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !has {
-			t.Fatalf("should has %s", item.Key)
-		}
-	}
+// 	for _, item := range tdata {
+// 		has, err := client.Has(ds.NewKey(item.Key))
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if !has {
+// 			t.Fatalf("should has %s", item.Key)
+// 		}
+// 	}
 
-	for _, item := range tdata {
-		size, err := client.GetSize(ds.NewKey(item.Key))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if size != len(item.Value) {
-			t.Fatalf("%s size not match", item.Key)
-		}
-	}
+// 	for _, item := range tdata {
+// 		size, err := client.GetSize(ds.NewKey(item.Key))
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if size != len(item.Value) {
+// 			t.Fatalf("%s size not match", item.Key)
+// 		}
+// 	}
 
-	for _, item := range tdata {
-		v, err := client.Get(ds.NewKey(item.Key))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !bytes.Equal(v, item.Value) {
-			t.Fatal("retrived value not match")
-		}
-	}
+// 	for _, item := range tdata {
+// 		v, err := client.Get(ds.NewKey(item.Key))
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if !bytes.Equal(v, item.Value) {
+// 			t.Fatal("retrived value not match")
+// 		}
+// 	}
 
-	for _, item := range tdata {
-		err := client.Delete(ds.NewKey(item.Key))
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
+// 	for _, item := range tdata {
+// 		err := client.Delete(ds.NewKey(item.Key))
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 	}
+// }
 
 func cfgFromString(str string) (*config.Config, error) {
 	cfg := &config.Config{}
