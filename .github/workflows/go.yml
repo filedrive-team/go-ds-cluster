@@ -18,6 +18,9 @@ jobs:
       with:
         go-version: 1.16
 
+    - name: UDP Receive Buffer Size
+      run: sysctl -w net.core.rmem_max=2500000
+
     - name: Static Checking
       run: go vet -v ./...
 
