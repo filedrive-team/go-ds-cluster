@@ -57,7 +57,7 @@ func (*mongodsPlugin) DatastoreConfigParser() fsrepo.ConfigFromMap {
 
 func (c *datastoreConfig) DiskSpec() fsrepo.DiskSpec {
 	return map[string]interface{}{
-		"type": "mongods",
+		"type": "clusterds",
 		"cfg":  c.cfg,
 	}
 }
