@@ -2,7 +2,11 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"time"
+
+	mrand "math/rand"
 
 	"github.com/filedrive-team/go-ds-cluster/shard"
 	"go.uber.org/fx"
@@ -51,4 +55,11 @@ func ReadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+func randPortNumber() string {
+	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(9999)))
+	r := mrand.Float64()
+	m := 1000 + 9000*r
+	return fmt.Sprintf("%.0f", m)
 }

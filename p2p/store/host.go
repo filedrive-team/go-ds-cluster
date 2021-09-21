@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
 )
 
 func makeBasicHost(listenPort int) (host.Host, error) {
@@ -21,6 +22,8 @@ func makeBasicHost(listenPort int) (host.Host, error) {
 		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
+		libp2p.DefaultTransports,
+		libp2p.Transport(libp2pquic.NewTransport),
 	}
 
 	return libp2p.New(context.Background(), opts...)
@@ -40,6 +43,8 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 		libp2p.ListenAddrStrings(cfg.Addresses.Swarm...),
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
+		libp2p.DefaultTransports,
+		libp2p.Transport(libp2pquic.NewTransport),
 	}
 	h, err := libp2p.New(context.Background(), opts...)
 	if err != nil {

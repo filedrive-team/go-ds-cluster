@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
+	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	log "github.com/ipfs/go-log/v2"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"go.uber.org/fx"
@@ -22,6 +21,7 @@ import (
 
 var logging = log.Logger("dscluster")
 var confpath string
+var mongodb string
 
 func init() {
 	log.SetLogLevelRegex("*", "info")
@@ -29,22 +29,48 @@ func init() {
 
 func main() {
 	flag.StringVar(&confpath, "conf", ".dscluster", "")
+	flag.StringVar(&mongodb, "mongodb", "", "")
 	flag.Parse()
+
+	ctxbg := context.Background()
+	ctxOption := fx.Provide(func() context.Context {
+		return ctxbg
+	})
 
 	confOption, err := config.LoadConfig(confpath)
 	if err != nil {
 		logging.Fatal(err)
 	}
+	var dsOption fx.Option
+	if mongodb != "" {
+		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle) (ds.Datastore, error) {
+			monds, err := mongods.NewMongoDS(ctx, mongods.ExtendConf(&mongods.Config{
+				Uri: mongodb,
+			}))
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return monds.Close()
+				},
+			})
+			return monds, nil
+		})
+	} else {
+		dsOption = fx.Provide(FlatFS)
+	}
+
 	app := fx.New(
+		ctxOption,
 		confOption,
+		dsOption,
 		fx.Provide(
 			BasicHost,
 			ProtocolID,
-			FlatFS,
 		),
 		fx.Invoke(Kickoff),
 	)
-	ctxbg := context.Background()
 
 	startctx, cancel := context.WithTimeout(ctxbg, 5*time.Second)
 	defer cancel()
@@ -70,7 +96,7 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore) {
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
-			cancel()
+			defer cancel()
 			return server.Close()
 		},
 		OnStart: func(ctx context.Context) error {
@@ -94,18 +120,7 @@ func ProtocolID() protocol.ID {
 }
 
 func BasicHost(lc fx.Lifecycle, cfg *config.Config) (host.Host, error) {
-	priv, err := crypto.UnmarshalPrivateKey(cfg.Identity.SK)
-	if err != nil {
-		return nil, err
-	}
-	priv.Bytes()
-
-	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(cfg.Addresses.Swarm...),
-		libp2p.Identity(priv),
-		libp2p.DisableRelay(),
-	}
-	h, err := libp2p.New(context.Background(), opts...)
+	h, err := store.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}

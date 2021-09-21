@@ -132,3 +132,7 @@ func (sm *SlotsManager) Check() {
 	// }
 
 }
+
+func (sm *SlotsManager) Nodes() []Node {
+	return sm.nodes
+}
