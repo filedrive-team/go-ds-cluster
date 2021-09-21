@@ -174,6 +174,14 @@ func TestNodeBySlot(t *testing.T) {
 	if nd.Slots.Start != 14043 && nd.Slots.End != 16383 {
 		t.Fatal("unexpected node")
 	}
+
+	nd, err = sm7.NodeBySlot(65043)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nd.Slots.Start != 14043 && nd.Slots.End != 16383 {
+		t.Fatal("unexpected node")
+	}
 }
 
 func TestRestoreSlotsManager(t *testing.T) {

@@ -95,11 +95,11 @@ func (sm *SlotsManager) NodeByKey(key string) (*Node, error) {
 }
 
 func (sm *SlotsManager) NodeBySlot(n uint16) (*Node, error) {
-	slotN := n
+	slotN := n % SLOTS_NUM
 	// figure out range number
 	rn := slotN / sm.rangeLen
 	if int(rn) >= len(sm.slotsRange) {
-		return nil, xerrors.Errorf("unexpected slot number, rn: %d, sm.rangeLen: %d, len(sm.slotsRange):%d", rn, sm.rangeLen, len(sm.slotsRange))
+		return nil, xerrors.Errorf("unexpected slot number,n: %d, slotN: %d, rn: %d, sm.rangeLen: %d, len(sm.slotsRange):%d", n, slotN, rn, sm.rangeLen, len(sm.slotsRange))
 	}
 	maybeRange := sm.slotsRange[rn]
 	// check if really in the range
