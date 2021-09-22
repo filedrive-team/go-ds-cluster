@@ -47,21 +47,7 @@ func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, 
 	}, nil
 }
 
-func (d *ClusterClient) Put(k ds.Key, value []byte) error {
-	kstr := k.String()
-	sn, err := d.sm.NodeByKey(kstr)
-	if err != nil {
-		return err
-	}
-	client, ok := d.nodeMap[sn.ID]
-	if !ok {
-		return xerrors.Errorf("can not find DataNodeClient by: %s", sn.ID)
-	}
-	return client.Put(kstr, value)
-}
-
-func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
-	kstr := k.String()
+func (d *ClusterClient) nodeByKey(kstr string) (core.DataNodeClient, error) {
 	sn, err := d.sm.NodeByKey(kstr)
 	if err != nil {
 		return nil, err
@@ -70,44 +56,50 @@ func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
 	if !ok {
 		return nil, xerrors.Errorf("can not find DataNodeClient by: %s", sn.ID)
 	}
+	return client, nil
+}
+
+func (d *ClusterClient) Put(k ds.Key, value []byte) error {
+	kstr := k.String()
+	client, err := d.nodeByKey(kstr)
+	if err != nil {
+		return err
+	}
+	return client.Put(kstr, value)
+}
+
+func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
+	kstr := k.String()
+	client, err := d.nodeByKey(kstr)
+	if err != nil {
+		return nil, err
+	}
 	return client.Get(kstr)
 }
 
 func (d *ClusterClient) Has(k ds.Key) (bool, error) {
 	kstr := k.String()
-	sn, err := d.sm.NodeByKey(kstr)
+	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return false, err
-	}
-	client, ok := d.nodeMap[sn.ID]
-	if !ok {
-		return false, xerrors.Errorf("can not find DataNodeClient by: %s", sn.ID)
 	}
 	return client.Has(kstr)
 }
 
 func (d *ClusterClient) GetSize(k ds.Key) (int, error) {
 	kstr := k.String()
-	sn, err := d.sm.NodeByKey(kstr)
+	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return -1, err
-	}
-	client, ok := d.nodeMap[sn.ID]
-	if !ok {
-		return -1, xerrors.Errorf("can not find DataNodeClient by: %s", sn.ID)
 	}
 	return client.GetSize(kstr)
 }
 
 func (d *ClusterClient) Delete(k ds.Key) error {
 	kstr := k.String()
-	sn, err := d.sm.NodeByKey(kstr)
+	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return err
-	}
-	client, ok := d.nodeMap[sn.ID]
-	if !ok {
-		return xerrors.Errorf("can not find DataNodeClient by: %s", sn.ID)
 	}
 	return client.Delete(kstr)
 }
