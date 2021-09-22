@@ -123,7 +123,7 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 	go func(stop chan struct{}, cc chan struct{}) {
 		defer func() {
 			if r := recover(); r != nil {
-				logging.Warn(r)
+				logging.Info(r)
 			}
 		}()
 		for {
@@ -183,7 +183,7 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 		Close: func() error {
 			defer func() {
 				if r := recover(); r != nil {
-					logging.Warn(r)
+					logging.Info(r)
 				}
 			}()
 			close(stop)
