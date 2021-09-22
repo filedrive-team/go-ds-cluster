@@ -13,6 +13,7 @@ require (
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-quic-transport v0.11.2
+	github.com/libp2p/go-libp2p-swarm v0.5.0
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/urfave/cli/v2 v2.0.0
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210713220151-be142a5ae1a8

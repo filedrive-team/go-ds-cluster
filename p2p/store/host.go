@@ -9,8 +9,14 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	transport "github.com/libp2p/go-libp2p-core/transport"
 	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
+	swarm "github.com/libp2p/go-libp2p-swarm"
 )
+
+func init() {
+	swarm.DialTimeoutLocal = transport.DialTimeout
+}
 
 func makeBasicHost(listenPort int) (host.Host, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
