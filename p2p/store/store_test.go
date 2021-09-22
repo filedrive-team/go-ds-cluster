@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	cborutil "github.com/filecoin-project/go-cbor-util"
+	"github.com/filedrive-team/go-ds-cluster/utils"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -42,11 +43,11 @@ var tdata = []Pair{
 }
 
 func TestP2P(t *testing.T) {
-	h1, err := makeBasicHost(randPortNumber())
+	h1, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(randPortNumber())
+	h2, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,11 +100,11 @@ func TestP2P(t *testing.T) {
 }
 
 func TestDataNode(t *testing.T) {
-	h1, err := makeBasicHost(randPortNumber())
+	h1, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(randPortNumber())
+	h2, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,11 +179,11 @@ func TestDataNode(t *testing.T) {
 }
 
 func TestDataNodeQuery(t *testing.T) {
-	h1, err := makeBasicHost(randPortNumber())
+	h1, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(randPortNumber())
+	h2, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}

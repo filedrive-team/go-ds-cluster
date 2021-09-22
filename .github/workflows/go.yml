@@ -26,9 +26,6 @@ jobs:
     - name: UDP Receive Buffer Size
       run: sudo sysctl -w net.core.rmem_max=2500000
 
-    - name: Static Checking
-      run: go vet -v ./...
-
     - name: Test
       run: go test -v ./...
     
