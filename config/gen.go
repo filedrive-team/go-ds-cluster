@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/filedrive-team/go-ds-cluster/shard"
+	"github.com/filedrive-team/go-ds-cluster/utils"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
@@ -40,7 +41,7 @@ func GenClusterConf(num int) ([]*Config, error) {
 
 	cfgNodes := make([]Node, num)
 	for i := range cfgNodes {
-		rport := randPortNumber()
+		rport := utils.RandPort()
 		cfgNodes[i] = Node{
 			Node: shardStartNodes[i],
 			Swarm: []string{
@@ -77,7 +78,7 @@ func GenClientConf() (*Config, error) {
 		return nil, err
 	}
 
-	rport := randPortNumber()
+	rport := utils.RandPort()
 	return &Config{
 		Addresses: Addresses{
 			Swarm: []string{

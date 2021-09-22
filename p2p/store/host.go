@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	mrand "math/rand"
-	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/libp2p/go-libp2p"
@@ -56,11 +54,4 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 	}
 
 	return h, nil
-}
-
-func randPortNumber() string {
-	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(9999)))
-	r := mrand.Float64()
-	m := 4000 + 6000*r
-	return fmt.Sprintf("%.0f", m)
 }
