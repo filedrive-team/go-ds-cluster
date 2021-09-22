@@ -37,10 +37,6 @@ func makeBasicHost(listenPort string) (host.Host, error) {
 	return libp2p.New(context.Background(), opts...)
 }
 
-func BasicHost(listenPort int) (host.Host, error) {
-	return makeBasicHost(fmt.Sprintf("%d", listenPort))
-}
-
 func HostFromConf(cfg *config.Config) (host.Host, error) {
 	priv, err := crypto.UnmarshalPrivateKey(cfg.Identity.SK)
 	if err != nil {
