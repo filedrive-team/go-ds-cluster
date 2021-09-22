@@ -10,6 +10,7 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/core"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
+	dsq "github.com/ipfs/go-datastore/query"
 	log "github.com/ipfs/go-log/v2"
 )
 
@@ -196,13 +197,99 @@ func TestClusterClient(t *testing.T) {
 			t.Fatal("retrived value not match")
 		}
 	}
-
 	for _, item := range tdata {
 		err := client.Delete(ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
+}
+func TestClusterClientQuery(t *testing.T) {
+	log.SetLogLevel("*", "info")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+
+	srv1Cfg, err := cfgFromString(srv1cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv1, err := serverFromCfg(ctx, srv1Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv1.Close()
+	srv1.Serve()
+
+	srv2Cfg, err := cfgFromString(srv2cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv2, err := serverFromCfg(ctx, srv2Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv2.Close()
+	srv2.Serve()
+
+	srv3Cfg, err := cfgFromString(srv3cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv3, err := serverFromCfg(ctx, srv3Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv3.Close()
+	srv3.Serve()
+
+	clientCfg, err := cfgFromString(c1cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClusterClient(ctx, clientCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	for i, item := range tdata {
+		err = client.Put(ds.NewKey(item.Key), item.Value)
+		if err != nil {
+			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
+		}
+	}
+
+	results, err := client.Query(dsq.Query{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ents, err := results.Rest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ents) != len(tdata) {
+		t.Fatalf("query results not matched")
+	}
+	for _, item := range tdata {
+		ent, has := findEntry(ds.NewKey(item.Key), ents)
+		if !has {
+			t.Fatalf("query results should has key: %s", item.Key)
+		}
+		if !bytes.Equal(ent.Value, item.Value) {
+			t.Fatalf("query results value not matched, expected: %s, got: %s", item.Value, ent.Value)
+		}
+	}
+
+}
+func findEntry(k ds.Key, ents []dsq.Entry) (dsq.Entry, bool) {
+	for _, ent := range ents {
+		if ent.Key == k.String() {
+			return ent, true
+		}
+	}
+	return dsq.Entry{}, false
 }
 
 // func TestClusterClientByConfGen(t *testing.T) {
