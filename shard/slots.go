@@ -19,6 +19,7 @@ type SlotsManager struct {
 	nodes       []Node
 	slotsRange  []SlotsRange
 	nodeMap     map[int]Node
+	remain      uint16
 }
 
 type Node struct {
@@ -41,9 +42,9 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 	}
 	// generate slots range
 	sm.rangeLen = SLOTS_NUM / sm.nodesNum
-	remine := SLOTS_NUM % sm.nodesNum
-	if remine > 0 {
-		sm.rangeFactor = float64(nodeLen) / float64(remine)
+	sm.remain = SLOTS_NUM % sm.nodesNum
+	if sm.remain > 0 {
+		sm.rangeFactor = float64(nodeLen) / float64(sm.remain)
 	}
 	//fmt.Printf("remine %d, rf: %f\n", remine, sm.rangeFactor)
 
@@ -59,7 +60,7 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 		end = start + sm.rangeLen - 1
 		//fmt.Println(factorNext)
 		//fmt.Printf("l1: %f l2 %f l3: %f \n", float64(i+1), (factorNext+0.5)*sm.rangeFactor, float64(i+1)-(factorNext+0.5)*sm.rangeFactor)
-		if remine > 0 && float64(i+1)-(factorNext+0.5)*sm.rangeFactor > 0 {
+		if sm.remain > 0 && float64(i+1)-(factorNext+0.5)*sm.rangeFactor > 0 {
 			factorNext = factorNext + 1
 			end++
 		}
@@ -96,6 +97,10 @@ func (sm *SlotsManager) NodeByKey(key string) (*Node, error) {
 
 func (sm *SlotsManager) NodeBySlot(n uint16) (*Node, error) {
 	slotN := n % SLOTS_NUM
+	// check if slotN out of range
+	if slotN >= (sm.nodesNum * sm.rangeLen) {
+		slotN = slotN - sm.remain
+	}
 	// figure out range number
 	rn := slotN / sm.rangeLen
 	if int(rn) >= len(sm.slotsRange) {
