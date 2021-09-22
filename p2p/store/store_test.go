@@ -12,7 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
-	xerrors "golang.org/x/xerrors"
 )
 
 type pair struct {
@@ -146,26 +145,59 @@ func TestDataNode(t *testing.T) {
 	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_V1)
 	defer client.Close()
 
-	err = client.Put("winner", []byte("Leo is a good boy!"))
-	if err != nil {
-		t.Error(err)
+	for _, d := range tdata {
+		err = client.Put(d.K, d.V)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	size, err := client.GetSize("winner")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if size != 18 {
-		t.Fatal(xerrors.New("size not match"))
+	for _, d := range tdata {
+		has, err := client.Has(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !has {
+			t.Fatalf("should have data %s", d.K)
+		}
 	}
 
-	b, err := client.Get("winner")
-	if err != nil {
-		t.Fatal(err)
+	for _, d := range tdata {
+		size, err := client.GetSize(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if size != len(d.V) {
+			t.Fatalf("%s size not match", d.K)
+		}
 	}
-	if !bytes.Equal(b, []byte("Leo is a good boy!")) {
-		t.Error("content not match")
+
+	for _, d := range tdata {
+		v, err := client.Get(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(v, d.V) {
+			t.Fatalf("%s value not match", d.K)
+		}
 	}
+
+	for _, d := range tdata {
+		err := client.Delete(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, d := range tdata {
+		has, err := client.Has(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if has {
+			t.Fatalf("should not have data %s", d.K)
+		}
+	}
+
 }
 
 func TestDataNodeQuery(t *testing.T) {
