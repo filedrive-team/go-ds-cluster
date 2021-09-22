@@ -140,7 +140,7 @@ func TestDataNode(t *testing.T) {
 
 	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
 	defer server.Close()
-	go server.Serve()
+	server.Serve()
 
 	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_V1)
 	defer client.Close()
@@ -220,7 +220,7 @@ func TestDataNodeQuery(t *testing.T) {
 
 	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
 	defer server.Close()
-	go server.Serve()
+	server.Serve()
 
 	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_V1)
 	defer client.Close()

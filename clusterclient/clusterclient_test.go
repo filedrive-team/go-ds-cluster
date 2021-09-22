@@ -265,6 +265,7 @@ func TestClusterClientQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	ents, err := results.Rest()
 	if err != nil {
 		t.Fatal(err)
@@ -272,6 +273,7 @@ func TestClusterClientQuery(t *testing.T) {
 	if len(ents) != len(tdata) {
 		t.Fatalf("query results not matched")
 	}
+
 	for _, item := range tdata {
 		ent, has := findEntry(ds.NewKey(item.Key), ents)
 		if !has {
