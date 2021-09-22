@@ -64,6 +64,8 @@ func (sv *server) handleStream(s network.Stream) {
 		sv.put(s, reqMsg)
 	case ActDelete:
 		sv.delete(s, reqMsg)
+	case ActQuery:
+		sv.query(s, reqMsg)
 	default:
 		logging.Warnf("unhandled action: %v", reqMsg.Action)
 	}
@@ -146,4 +148,37 @@ func (sv *server) delete(s network.Stream, req *RequestMessage) {
 	if err := WriteReplyMsg(s, res); err != nil {
 		logging.Error(err)
 	}
+}
+
+func (sv *server) query(s network.Stream, req *RequestMessage) {
+	qresult, err := sv.ds.Query(DSQuery(req.Query))
+	if err != nil {
+		res := &QueryResultEntry{}
+		res.Code = ErrOthers
+		res.Msg = err.Error()
+		if err := WriteQueryResultEntry(s, res); err != nil {
+			logging.Error(err)
+		}
+		return
+	}
+
+	for result := range qresult.Next() {
+		res := &QueryResultEntry{}
+		if result.Error != nil {
+			res.Code = ErrOthers
+			res.Msg = result.Error.Error()
+			if err := WriteQueryResultEntry(s, res); err != nil {
+				logging.Error(err)
+			}
+			return
+		}
+		res.Key = result.Key
+		res.Value = result.Value
+		res.Size = int64(result.Size)
+		if err := WriteQueryResultEntry(s, res); err != nil {
+			logging.Error(err)
+			return
+		}
+	}
+
 }
