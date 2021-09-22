@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	mrand "math/rand"
+	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/libp2p/go-libp2p"
@@ -18,14 +20,14 @@ func init() {
 	swarm.DialTimeoutLocal = transport.DialTimeout
 }
 
-func makeBasicHost(listenPort int) (host.Host, error) {
+func makeBasicHost(listenPort string) (host.Host, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", listenPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", listenPort), fmt.Sprintf("/ip4/0.0.0.0/udp/%s/quic", listenPort)),
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
@@ -36,7 +38,7 @@ func makeBasicHost(listenPort int) (host.Host, error) {
 }
 
 func BasicHost(listenPort int) (host.Host, error) {
-	return makeBasicHost(listenPort)
+	return makeBasicHost(fmt.Sprintf("%d", listenPort))
 }
 
 func HostFromConf(cfg *config.Config) (host.Host, error) {
@@ -58,4 +60,11 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 	}
 
 	return h, nil
+}
+
+func randPortNumber() string {
+	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(9999)))
+	r := mrand.Float64()
+	m := 1000 + 9000*r
+	return fmt.Sprintf("%.0f", m)
 }

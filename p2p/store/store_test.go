@@ -54,11 +54,11 @@ var tdata []pair = []pair{
 
 func TestP2P(t *testing.T) {
 	log.SetLogLevel("*", "info")
-	h1, err := makeBasicHost(3220)
+	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(3330)
+	h2, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,11 +122,11 @@ func TestP2P(t *testing.T) {
 
 func TestDataNode(t *testing.T) {
 	log.SetLogLevel("*", "info")
-	h1, err := makeBasicHost(3220)
+	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(3330)
+	h2, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,11 +202,11 @@ func TestDataNode(t *testing.T) {
 
 func TestDataNodeQuery(t *testing.T) {
 	log.SetLogLevel("*", "info")
-	h1, err := makeBasicHost(3220)
+	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(3330)
+	h2, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
 	}
