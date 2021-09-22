@@ -175,7 +175,7 @@ func TestNodeBySlot(t *testing.T) {
 		t.Fatal("unexpected node")
 	}
 
-	nd, err = sm7.NodeBySlot(65043)
+	nd, err = sm7.NodeBySlot(16383)
 	if err != nil {
 		t.Fatal(err)
 	}
