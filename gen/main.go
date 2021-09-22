@@ -12,6 +12,8 @@ func main() {
 	err := gen.WriteTupleEncodersToFile("./p2p/store/cbor_gen.go", "store",
 		store.RequestMessage{},
 		store.ReplyMessage{},
+		store.QueryResultEntry{},
+		store.Query{},
 	)
 	if err != nil {
 		fmt.Println(err)
