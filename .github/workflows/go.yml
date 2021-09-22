@@ -13,15 +13,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@1.6.0
-      with:
-        mongodb-version: '4.2'
-
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16
+        go-version: 1.16.7
 
     - name: UDP Receive Buffer Size
       run: sudo sysctl -w net.core.rmem_max=2500000
