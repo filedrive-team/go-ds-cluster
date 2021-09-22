@@ -122,7 +122,7 @@ var srv3cfg = `
 `
 
 func TestClusterClient(t *testing.T) {
-	log.SetLogLevel("*", "info")
+	//log.SetLogLevel("*", "info")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error

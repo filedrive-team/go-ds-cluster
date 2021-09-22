@@ -8,7 +8,6 @@ import (
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
-	log "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
@@ -43,7 +42,6 @@ var tdata = []Pair{
 }
 
 func TestP2P(t *testing.T) {
-	log.SetLogLevel("*", "info")
 	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +99,6 @@ func TestP2P(t *testing.T) {
 }
 
 func TestDataNode(t *testing.T) {
-	log.SetLogLevel("*", "info")
 	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)
@@ -181,7 +178,6 @@ func TestDataNode(t *testing.T) {
 }
 
 func TestDataNodeQuery(t *testing.T) {
-	log.SetLogLevel("*", "info")
 	h1, err := makeBasicHost(randPortNumber())
 	if err != nil {
 		t.Fatal(err)

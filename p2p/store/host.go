@@ -61,6 +61,6 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 func randPortNumber() string {
 	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(9999)))
 	r := mrand.Float64()
-	m := 1000 + 9000*r
+	m := 4000 + 6000*r
 	return fmt.Sprintf("%.0f", m)
 }
