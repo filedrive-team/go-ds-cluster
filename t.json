@@ -1,0 +1,14 @@
+{
+	"identity": {
+		"peer_id": "QmTxPVqAb8x9chZuZdFZxDvdRK2GVGdEG84w61WYaVy7DD",
+		"sk": "CAMSeTB3AgEBBCAEuvTtWexe8T874M6itoMdlKuG4bLw1cw3C7/2w0lmjqAKBggqhkjOPQMBB6FEA0IABBtPXgZYD8JrtruvdmRSxeEvCymK3mR5YKdi50WVOMO/eb6JvCGQ7+ojy8yjuoYlDRHpiV7rNLHuqeGuaf+3YEc="
+	},
+	"addresses": {
+		"swarm": [
+			"/ip4/0.0.0.0/tcp/7982",
+			"/ip4/0.0.0.0/udp/7982/quic"
+		]
+	},
+	"conf_path": "",
+	"nodes": []
+}

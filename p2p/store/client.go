@@ -157,14 +157,14 @@ func (cl *client) Has(key string) (exists bool, err error) {
 		Action: ActHas,
 	}
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("key: %s, error: %s, target id: %s", key, err, cl.target.ID)
 		return false, err
 	}
 
 	reply := &ReplyMessage{}
 
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("key: %s, error: %s, target id: %s", key, err, cl.target.ID)
 		return false, err
 	}
 	if reply.Code != ErrNone {
