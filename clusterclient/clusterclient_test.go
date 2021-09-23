@@ -11,7 +11,6 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
-	log "github.com/ipfs/go-log/v2"
 )
 
 type Pair struct {
@@ -205,7 +204,7 @@ func TestClusterClient(t *testing.T) {
 	}
 }
 func TestClusterClientQuery(t *testing.T) {
-	log.SetLogLevel("*", "info")
+	//log.SetLogLevel("*", "info")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
