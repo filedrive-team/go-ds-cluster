@@ -2,6 +2,7 @@ package clusterclient
 
 import (
 	context "context"
+	"sync"
 	"sync/atomic"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
@@ -116,25 +117,28 @@ func (d *ClusterClient) Close() error {
 func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 	out := make(chan dsq.Result)
 	stop := make(chan struct{})
+	closeStop := func() {
+		close(stop)
+	}
+	closeOut := func() {
+		close(out)
+	}
+	var stopOnce sync.Once
+	var outOnce sync.Once
 
 	// figure out when to close all the channel
 	cc := make(chan struct{})
 	var closeCount int64
 	go func(stop chan struct{}, cc chan struct{}) {
-		defer func() {
-			if r := recover(); r != nil {
-				logging.Info(r)
-			}
-		}()
 		for {
 			select {
 			case <-stop:
-				close(out)
+				outOnce.Do(closeOut)
 				return
 			case <-cc:
 				atomic.AddInt64(&closeCount, 1)
 				if atomic.LoadInt64(&closeCount) >= int64(len(d.nodeMap)) {
-					close(stop)
+					stopOnce.Do(closeStop)
 				}
 			}
 		}
@@ -181,12 +185,7 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 
 	return dsq.ResultsFromIterator(q, dsq.Iterator{
 		Close: func() error {
-			defer func() {
-				if r := recover(); r != nil {
-					logging.Info(r)
-				}
-			}()
-			close(stop)
+			stopOnce.Do(closeStop)
 			return nil
 		},
 		Next: nextValue,
