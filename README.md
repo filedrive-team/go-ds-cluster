@@ -1,6 +1,6 @@
 go-ds-cluster
 ============
-> gathering distributed key-value datastores to become a cluster
+> Gathering distributed key-value datastores to become a cluster
 
 
 <!-- ABOUT THE PROJECT -->
@@ -25,9 +25,9 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 - data node has two basic components
   - datastore offering key-value strorage
   - cluster instance maintains cluster related logic
-- any node in the cluster can be used has ipfs datastore, sharding data to data nodes in the cluster
+- any node in the cluster can be used has ipfs datastore, sharding data to data-nodes in the cluster
 - a key-value table of all data in the datastore has been maintained by every node
-- the relation between hash slots and data node also been maintained by every node
+- the relation between hash slots and data-node also been maintained by every node
 
 ## Roadmap
 
