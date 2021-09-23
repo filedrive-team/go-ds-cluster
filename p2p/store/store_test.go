@@ -5,13 +5,10 @@ import (
 	"context"
 	"testing"
 
-	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filedrive-team/go-ds-cluster/utils"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/peerstore"
 )
 
 type Pair struct {
@@ -25,7 +22,9 @@ var tdata = []Pair{
 	{"afsis", []byte("Africa Soil Information Service (AfSIS) Soil Chemistry")},
 }
 
+/*
 func TestP2P(t *testing.T) {
+	log.SetLogLevel("*", "info")
 	h1, err := makeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
@@ -80,6 +79,7 @@ func TestP2P(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+*/
 
 func TestDataNode(t *testing.T) {
 	h1, err := makeBasicHost(utils.RandPort())

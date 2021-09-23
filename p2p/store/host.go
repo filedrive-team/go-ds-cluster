@@ -25,11 +25,10 @@ func makeBasicHost(listenPort string) (host.Host, error) {
 	}
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/0.0.0.0/tcp/%s", listenPort), fmt.Sprintf("/ip4/0.0.0.0/udp/%s/quic", listenPort)),
+		libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", listenPort)),
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
-		libp2p.Transport(libp2pquic.NewTransport),
 	}
 
 	return libp2p.New(context.Background(), opts...)

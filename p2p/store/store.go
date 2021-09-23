@@ -11,9 +11,7 @@ import (
 var logging = log.Logger("dscluster/p2p/store")
 
 const (
-	PROTOCOL_V1         = "/cluster/store/0.0.1"
-	PROTOCOL_REQUEST_V1 = "/cluster/store/request/0.0.1"
-	PROTOCOL_REPLY_V1   = "/cluster/store/reply/0.0.1"
+	PROTOCOL_V1 = "/cluster/store/0.0.1"
 )
 
 var readDeadline = time.Second * 2
