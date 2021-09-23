@@ -23,23 +23,6 @@ var tdata = []Pair{
 	{"Filedrive", []byte("Platform for better use of datasets on web3")},
 	{"FileDAG", []byte("Destributed storage provider")},
 	{"afsis", []byte("Africa Soil Information Service (AfSIS) Soil Chemistry")},
-	{"tablestore", []byte("AI2 Tablestore (November 2015 Snapshot)")},
-	{"tuple-kb", []byte("Aristo Tuple KB")},
-	{"amazon-conversational-product-search", []byte("Voice-based refinements of product search")},
-	{"Amazon-PQA", []byte("Amazon product questions and their answers, along with the public product information.")},
-	{"amazon-reviews-ml", []byte("The Multilingual Amazon Reviews Corpus")},
-	{"answer-reformulation-pds", []byte("Answer Reformulation")},
-	{"asr-error-robustness", []byte("Automatic Speech Recognition (ASR) Error Robustness")},
-	{"dataworld-linked-acs", []byte("U.S. Census ACS PUMS")},
-	{"civic-aws-opendata", []byte("CIViC (Clinical Interpretation of Variants in Cancer)")},
-	{"code-mixed-ner", []byte("Multilingual Name Entity Recognition (NER) Datasets with Gazetteer")},
-	{"hrsl-cogs", []byte("High Resolution Population Density Maps + Demographic Estimates by CIESIN and Facebook")},
-	{"dialoglue", []byte("DialoGLUE: A Natural Language Understanding Benchmark for Task-Oriented Dialogue")},
-	{"fashionlocaltriplets", []byte("Fine-grained localized visual similarity and search for fashion.")},
-	{"fast-ai-imageclas", []byte("Image classification - fast.ai datasets")},
-	{"gdc-fm-ad-phs001179-2-open", []byte("Foundation Medicine Adult Cancer Clinical Dataset (FM-AD)")},
-	{"gdc-hcmi-cmdc-phs001486-2-open", []byte("Human Cancer Models Initiative (HCMI) Cancer Model Development Center")},
-	{"humor-detection-pds", []byte("Humor Detection from Product Question Answering Systems")},
 }
 
 func TestP2P(t *testing.T) {
@@ -61,7 +44,6 @@ func TestP2P(t *testing.T) {
 
 	h2.SetStreamHandler(PROTOCOL_V1, func(s network.Stream) {
 		defer s.Close()
-		logging.Info("incoming stream")
 		var hmsg RequestMessage
 		if err := cborutil.ReadCborRPC(s, &hmsg); err != nil {
 			t.Fatal(err)
