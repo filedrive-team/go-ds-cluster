@@ -11,9 +11,7 @@ import (
 var logging = log.Logger("dscluster/p2p/store")
 
 const (
-	PROTOCOL_V1         = "/cluster/store/0.0.1"
-	PROTOCOL_REQUEST_V1 = "/cluster/store/request/0.0.1"
-	PROTOCOL_REPLY_V1   = "/cluster/store/reply/0.0.1"
+	PROTOCOL_V1 = "/cluster/store/0.0.1"
 )
 
 var readDeadline = time.Second * 2
@@ -50,6 +48,26 @@ func ReadReplyMsg(s network.Stream, msg *ReplyMessage) error {
 }
 
 func WriteReplyMsg(s network.Stream, msg *ReplyMessage) error {
+	if err := s.SetWriteDeadline(time.Now().Add(writeDeadline)); err != nil {
+		return err
+	}
+	if err := cborutil.WriteCborRPC(s, msg); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ReadQueryResultEntry(s network.Stream, msg *QueryResultEntry) error {
+	if err := s.SetReadDeadline(time.Now().Add(readDeadline)); err != nil {
+		return err
+	}
+	if err := cborutil.ReadCborRPC(s, msg); err != nil {
+		return err
+	}
+	return nil
+}
+
+func WriteQueryResultEntry(s network.Stream, msg *QueryResultEntry) error {
 	if err := s.SetWriteDeadline(time.Now().Add(writeDeadline)); err != nil {
 		return err
 	}

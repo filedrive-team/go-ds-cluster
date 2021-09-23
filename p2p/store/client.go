@@ -5,6 +5,7 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/core"
 	ds "github.com/ipfs/go-datastore"
+	dsq "github.com/ipfs/go-datastore/query"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
@@ -208,4 +209,47 @@ func (cl *client) GetSize(key string) (size int, err error) {
 	}
 
 	return int(reply.Size), nil
+}
+
+func (cl *client) Query(q dsq.Query) (dsq.Results, error) {
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return nil, err
+	}
+	//defer s.Close()
+
+	req := &RequestMessage{
+		Query:  P2PQuery(q),
+		Action: ActQuery,
+	}
+
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return nil, err
+	}
+
+	nextValue := func() (dsq.Result, bool) {
+		ent := &QueryResultEntry{}
+
+		if err := ReadQueryResultEntry(s, ent); err != nil {
+			s.Close()
+			return dsq.Result{Error: err}, false
+		}
+		if ent.Code != ErrNone {
+			s.Close()
+			return dsq.Result{Error: xerrors.New(ent.Msg)}, false
+		}
+		return dsq.Result{Entry: dsq.Entry{
+			Key:   ent.Key,
+			Value: ent.Value,
+		}}, true
+	}
+
+	return dsq.ResultsFromIterator(q, dsq.Iterator{
+		Close: func() error {
+			return s.Close()
+		},
+		Next: nextValue,
+	}), nil
 }

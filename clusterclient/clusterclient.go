@@ -2,6 +2,7 @@ package clusterclient
 
 import (
 	context "context"
+	"sync/atomic"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/core"
@@ -113,42 +114,83 @@ func (d *ClusterClient) Close() error {
 }
 
 func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
-	return nil, xerrors.Errorf("not support for now")
-	// b, err := json.Marshal(q)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// r, err := d.client.Query(d.ctx, &QueryRequest{
-	// 	Q: b,
-	// })
-	// if err != nil {
-	// 	r.CloseSend()
-	// 	return nil, err
-	// }
+	out := make(chan dsq.Result)
+	stop := make(chan struct{})
 
-	// nextValue := func() (dsq.Result, bool) {
-	// 	ritem, err := r.Recv()
-	// 	// if err == io.EOF {
-	// 	// 	return dsq.Result{}, false
-	// 	// }
-	// 	if err != nil {
-	// 		return dsq.Result{Error: err}, false
-	// 	}
+	// figure out when to close all the channel
+	cc := make(chan struct{})
+	var closeCount int64
+	go func(stop chan struct{}, cc chan struct{}) {
+		defer func() {
+			if r := recover(); r != nil {
+				logging.Info(r)
+			}
+		}()
+		for {
+			select {
+			case <-stop:
+				close(out)
+				return
+			case <-cc:
+				atomic.AddInt64(&closeCount, 1)
+				if atomic.LoadInt64(&closeCount) >= int64(len(d.nodeMap)) {
+					close(stop)
+				}
+			}
+		}
+	}(stop, cc)
 
-	// 	ent := dsq.Entry{}
-	// 	err = json.Unmarshal(ritem.GetRes(), &ent)
-	// 	if err != nil {
-	// 		return dsq.Result{Error: err}, false
-	// 	}
-	// 	return dsq.Result{Entry: ent}, true
-	// }
+	for _, dc := range d.nodeMap {
+		go func(dc core.DataNodeClient, q dsq.Query, ch chan dsq.Result, stop chan struct{}, cc chan struct{}) {
+			defer func() {
+				cc <- struct{}{}
+			}()
+			results, err := dc.Query(q)
+			if err != nil {
+				logging.Error(err)
+				return
+			}
+			for {
+				select {
+				case <-stop:
+					results.Close()
+					return
+				case result, ok := <-results.Next():
+					if !ok {
+						return
+					}
+					out <- result
+				}
+			}
 
-	// return dsq.ResultsFromIterator(q, dsq.Iterator{
-	// 	Close: func() error {
-	// 		return r.CloseSend()
-	// 	},
-	// 	Next: nextValue,
-	// }), nil
+		}(dc, q, out, stop, cc)
+	}
+
+	nextValue := func() (dsq.Result, bool) {
+		result, ok := <-out
+		if !ok {
+			return dsq.Result{}, false
+		}
+
+		if result.Error != nil {
+			return result, false
+		}
+
+		return result, true
+	}
+
+	return dsq.ResultsFromIterator(q, dsq.Iterator{
+		Close: func() error {
+			defer func() {
+				if r := recover(); r != nil {
+					logging.Info(r)
+				}
+			}()
+			close(stop)
+			return nil
+		},
+		Next: nextValue,
+	}), nil
 }
 
 func (d *ClusterClient) Batch() (ds.Batch, error) {

@@ -18,7 +18,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufRequestMessage = []byte{131}
+var lengthBufRequestMessage = []byte{132}
 
 func (t *RequestMessage) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -56,6 +56,11 @@ func (t *RequestMessage) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
+	// t.Query (store.Query) (struct)
+	if err := t.Query.MarshalCBOR(w); err != nil {
+		return err
+	}
+
 	// t.Action (store.Act) (uint8)
 	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Action)); err != nil {
 		return err
@@ -77,7 +82,7 @@ func (t *RequestMessage) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 3 {
+	if extra != 4 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -111,6 +116,15 @@ func (t *RequestMessage) UnmarshalCBOR(r io.Reader) error {
 
 	if _, err := io.ReadFull(br, t.Value[:]); err != nil {
 		return err
+	}
+	// t.Query (store.Query) (struct)
+
+	{
+
+		if err := t.Query.UnmarshalCBOR(br); err != nil {
+			return xerrors.Errorf("unmarshaling t.Query: %w", err)
+		}
+
 	}
 	// t.Action (store.Act) (uint8)
 
@@ -290,6 +304,286 @@ func (t *ReplyMessage) UnmarshalCBOR(r io.Reader) error {
 		t.Exists = false
 	case 21:
 		t.Exists = true
+	default:
+		return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
+	}
+	return nil
+}
+
+var lengthBufQueryResultEntry = []byte{131}
+
+func (t *QueryResultEntry) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+	if _, err := w.Write(lengthBufQueryResultEntry); err != nil {
+		return err
+	}
+
+	scratch := make([]byte, 9)
+
+	// t.Key (string) (string)
+	if len(t.Key) > cbg.MaxLength {
+		return xerrors.Errorf("Value in field t.Key was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.Key))); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, string(t.Key)); err != nil {
+		return err
+	}
+
+	// t.Value ([]uint8) (slice)
+	if len(t.Value) > cbg.ByteArrayMaxLen {
+		return xerrors.Errorf("Byte array in field t.Value was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.Value))); err != nil {
+		return err
+	}
+
+	if _, err := w.Write(t.Value[:]); err != nil {
+		return err
+	}
+
+	// t.Size (int64) (int64)
+	if t.Size >= 0 {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Size)); err != nil {
+			return err
+		}
+	} else {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.Size-1)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *QueryResultEntry) UnmarshalCBOR(r io.Reader) error {
+	*t = QueryResultEntry{}
+
+	br := cbg.GetPeeker(r)
+	scratch := make([]byte, 8)
+
+	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 3 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.Key (string) (string)
+
+	{
+		sval, err := cbg.ReadStringBuf(br, scratch)
+		if err != nil {
+			return err
+		}
+
+		t.Key = string(sval)
+	}
+	// t.Value ([]uint8) (slice)
+
+	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+
+	if extra > cbg.ByteArrayMaxLen {
+		return fmt.Errorf("t.Value: byte array too large (%d)", extra)
+	}
+	if maj != cbg.MajByteString {
+		return fmt.Errorf("expected byte array")
+	}
+
+	if extra > 0 {
+		t.Value = make([]uint8, extra)
+	}
+
+	if _, err := io.ReadFull(br, t.Value[:]); err != nil {
+		return err
+	}
+	// t.Size (int64) (int64)
+	{
+		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.Size = int64(extraI)
+	}
+	return nil
+}
+
+var lengthBufQuery = []byte{132}
+
+func (t *Query) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+	if _, err := w.Write(lengthBufQuery); err != nil {
+		return err
+	}
+
+	scratch := make([]byte, 9)
+
+	// t.Prefix (string) (string)
+	if len(t.Prefix) > cbg.MaxLength {
+		return xerrors.Errorf("Value in field t.Prefix was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.Prefix))); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, string(t.Prefix)); err != nil {
+		return err
+	}
+
+	// t.Limit (int64) (int64)
+	if t.Limit >= 0 {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Limit)); err != nil {
+			return err
+		}
+	} else {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.Limit-1)); err != nil {
+			return err
+		}
+	}
+
+	// t.Offset (int64) (int64)
+	if t.Offset >= 0 {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Offset)); err != nil {
+			return err
+		}
+	} else {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.Offset-1)); err != nil {
+			return err
+		}
+	}
+
+	// t.KeysOnly (bool) (bool)
+	if err := cbg.WriteBool(w, t.KeysOnly); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Query) UnmarshalCBOR(r io.Reader) error {
+	*t = Query{}
+
+	br := cbg.GetPeeker(r)
+	scratch := make([]byte, 8)
+
+	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 4 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.Prefix (string) (string)
+
+	{
+		sval, err := cbg.ReadStringBuf(br, scratch)
+		if err != nil {
+			return err
+		}
+
+		t.Prefix = string(sval)
+	}
+	// t.Limit (int64) (int64)
+	{
+		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.Limit = int64(extraI)
+	}
+	// t.Offset (int64) (int64)
+	{
+		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.Offset = int64(extraI)
+	}
+	// t.KeysOnly (bool) (bool)
+
+	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajOther {
+		return fmt.Errorf("booleans must be major type 7")
+	}
+	switch extra {
+	case 20:
+		t.KeysOnly = false
+	case 21:
+		t.KeysOnly = true
 	default:
 		return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
 	}
