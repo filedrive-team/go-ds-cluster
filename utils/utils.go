@@ -6,9 +6,14 @@ import (
 	"time"
 )
 
+const (
+	RandPortMin = 4000
+	RandPortMax = 10000
+)
+
 func RandPort() string {
-	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(9999)))
+	mrand.Seed(time.Now().Unix() * int64(mrand.Intn(RandPortMax)))
 	r := mrand.Float64()
-	m := 4000 + 6000*r
+	m := RandPortMin + (RandPortMax-RandPortMin)*r
 	return fmt.Sprintf("%.0f", m)
 }
