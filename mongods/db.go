@@ -56,12 +56,14 @@ func DefaultConf() *Config {
 	}
 }
 
+// Block - binary data
 type Block struct {
 	ID        string    `bson:"_id" json:"_id"`     // sha256 hash of Value
 	Value     []byte    `bson:"value" json:"value"` // value
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 }
 
+// BlockRef - reference for Block
 type BlockRef struct {
 	ID        string    `bson:"_id" json:"_id"` // key
 	Ref       string    `bson:"ref" json:"ref"` // sha256 hash of Value

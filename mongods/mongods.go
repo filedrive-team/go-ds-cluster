@@ -89,6 +89,8 @@ func (m *MongoDS) Query(q dsq.Query) (dsq.Results, error) {
 		}
 	}
 
+	// Todo
+	// implement Close method rather than return nil
 	return dsq.ResultsFromIterator(q, dsq.Iterator{
 		Close: func() error {
 			return nil
