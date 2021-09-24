@@ -50,7 +50,7 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 make dscfg
 
 # generate config json files for 3 server nodes cluster
-./dscfg cluster --cluster-node-number=3 [outpu-dir]
+./dscfg cluster --cluster-node-number=3 [output-dir]
 ls [outpu-dir]
 # cluster_00.json cluster_01.json cluster_02.json
 ```
@@ -61,6 +61,7 @@ make dscluster
 
 # copy to directory where to keep the executable binary and config for serv1
 cp dscluster [srv1-dir]
+cp [output-dir]/cluster_00.json [srv1-dir]/config.json
 cd [srv1-dir]
 
 # using flatfs as datastore
@@ -69,12 +70,73 @@ cd [srv1-dir]
 # ./dscluster --conf=[srv1cfg-dir] --mongodb="mongodb://localhost:27017" 
 
 cp dscluster [srv2-dir]
+cp [output-dir]/cluster_01.json [srv2-dir]/config.json
 cd [srv2-dir]
 ./dscluster --conf=[srv2cfg-dir]
 
 cp dscluster [srv3-dir]
+cp [output-dir]/cluster_02.json [srv3-dir]/config.json
 cd [srv3-dir]
 ./dscluster --conf=[srv3cfg-dir]
+```
+
+#### Embed into ipfs as a plugin
+
+[read about ipfs preloaded-plugins](https://github.com/ipfs/go-ipfs/blob/master/docs/plugins.md#preloaded-plugins)
+
+```shell
+# download go-ipfs repo
+git clone git@github.com:ipfs/go-ipfs.git
+cd go-ipfs
+
+# Add the plugin to the preload list: plugin/loader/preload_list
+echo "clusterds github.com/filedrive-team/go-ds-cluster/ipfsplugin *" >> plugin/loader/preload_list
+make build
+```
+Config customed ipfs
+
+```shell
+# set ipfs path
+export IPFS_PATH=~/.ipfs-dscluster
+./ipfs init 
+cd ~/.ipfs-dscluster
+# modify the "Datasore.Spec" field
+vi config
+# "Spec": {
+#   "mounts": [
+#     {
+#       "child": {
+#         "cfg": "clusterds.json",
+#         "type": "clusterds"
+#       },
+#       "mountpoint": "/blocks",
+#       "prefix": "clusterds.datastore",
+#       "type": "measure"
+#     },
+#     {
+#       "child": {
+#         "compression": "none",
+#         "path": "datastore",
+#         "type": "levelds"
+#       },
+#       "mountpoint": "/",
+#       "prefix": "leveldb.datastore",
+#       "type": "measure"
+#     }
+#   ],
+#   "type": "mount"
+# },
+
+# modify the 
+echo '{"mounts":[{"cfg":"clusterds.json","mountpoint":"/blocks","type":"clusterds"},{"mountpoint":"/","path":"datastore","type":"levelds"}],"type":"mount"}' > datastore_spec
+
+# generate clusterds.json
+/path/to/dscfg client clusterds.json
+
+# finally replace the "nodes" field in clusterds.json
+# with really server nodes info 
+
+./ipfs daemon
 ```
 
 ### Prerequisites
