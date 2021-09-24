@@ -43,7 +43,39 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 <!-- GETTING STARTED -->
 ## Getting Started
 
+#### Generate config files
 
+```shell
+# build config json generator
+make dscfg
+
+# generate config json files for 3 server nodes cluster
+./dscfg cluster --cluster-node-number=3 [outpu-dir]
+ls [outpu-dir]
+# cluster_00.json cluster_01.json cluster_02.json
+```
+
+#### Setup server nodes of the cluster
+```shell
+make dscluster
+
+# copy to directory where to keep the executable binary and config for serv1
+cp dscluster [srv1-dir]
+cd [srv1-dir]
+
+# using flatfs as datastore
+./dscluster --conf=[srv1cfg-dir]
+# or using mongods as datastore
+# ./dscluster --conf=[srv1cfg-dir] --mongodb="mongodb://localhost:27017" 
+
+cp dscluster [srv2-dir]
+cd [srv2-dir]
+./dscluster --conf=[srv2cfg-dir]
+
+cp dscluster [srv3-dir]
+cd [srv3-dir]
+./dscluster --conf=[srv3cfg-dir]
+```
 
 ### Prerequisites
 
