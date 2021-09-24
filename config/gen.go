@@ -10,6 +10,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
+// GenClusterConf
+// Generate config json files for server nodes in cluster
+// num - how many servers in the cluster
+//  - will generate [num] json files
+//  - each config has different Identity and Address but has same Nodes info
+//  - Nodes hold all info about server nodes in cluster
 func GenClusterConf(num int) ([]*Config, error) {
 	nodeIdentities := make([]Identity, num)
 	for i := range nodeIdentities {
@@ -63,6 +69,10 @@ func GenClusterConf(num int) ([]*Config, error) {
 	return res, nil
 }
 
+// GenClientConf
+// Generate config json for cluster client node
+// 	- key pair
+//  - libp2p listen address
 func GenClientConf() (*Config, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
 	if err != nil {
