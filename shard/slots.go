@@ -3,6 +3,7 @@ package shard
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 
 	"golang.org/x/xerrors"
@@ -41,40 +42,70 @@ func InitSlotManager(startNodes []Node) *SlotsManager {
 		nodeMap:    make(map[int]Node),
 	}
 	// generate slots range
+	// how may slots in a range, the real number would be adjusted if have remain
 	sm.rangeLen = SLOTS_NUM / sm.nodesNum
+	// the leftover slots which can't cover all nodes, should allocate these leftover to nodes as distributed as possible
 	sm.remain = SLOTS_NUM % sm.nodesNum
 	if sm.remain > 0 {
+		// decide which node should be allocated one leftover
 		sm.rangeFactor = float64(nodeLen) / float64(sm.remain)
 	}
-	//fmt.Printf("remine %d, rf: %f\n", remine, sm.rangeFactor)
+	// allocate remain to slotsRange according to adjustMap
+	adjustMap := make(map[uint16][]uint16)
+	// slotsRange been allocated remain is lucky
+	luckyMap := make(map[uint16]uint16)
+	var i uint16
+	for ; i < sm.remain; i++ {
+		luckyMap[uint16(math.Floor((float64(i)+0.5)*sm.rangeFactor))] = i
+	}
 
-	var factorNext float64 = 0
-	for i := range sm.slotsRange {
-		var start, end uint16
-		if i == 0 {
-			start = 0
+	var allocatedRemain uint16
+	for i = 0; i < uint16(len(sm.nodes)); i++ {
+		if _, ok := luckyMap[i]; ok {
+			adjustMap[i] = []uint16{allocatedRemain, allocatedRemain + 1}
+			allocatedRemain += 1
 		} else {
-			start = sm.slotsRange[i-1].End + 1
+			adjustMap[i] = []uint16{allocatedRemain, allocatedRemain}
 		}
+	}
 
-		end = start + sm.rangeLen - 1
-		//fmt.Println(factorNext)
-		//fmt.Printf("l1: %f l2 %f l3: %f \n", float64(i+1), (factorNext+0.5)*sm.rangeFactor, float64(i+1)-(factorNext+0.5)*sm.rangeFactor)
-		if sm.remain > 0 && float64(i+1)-(factorNext+0.5)*sm.rangeFactor > 0 {
-			factorNext = factorNext + 1
-			end++
-		}
-
-		if i+1 == len(sm.slotsRange) {
-			end = SLOTS_NUM - 1
-		}
+	for i := range sm.slotsRange {
+		adjust := adjustMap[uint16(i)]
 		sm.slotsRange[i] = SlotsRange{
-			Start: start,
-			End:   end,
+			Start: sm.rangeLen*uint16(i) + adjust[0],
+			End:   sm.rangeLen*(uint16(i+1)) - 1 + adjust[1],
 		}
 		sm.nodes[i].Slots = sm.slotsRange[i]
 		sm.nodeMap[i] = sm.nodes[i]
 	}
+
+	// var factorNext float64 = 0
+	// for i := range sm.slotsRange {
+	// 	var start, end uint16
+	// 	if i == 0 {
+	// 		start = 0
+	// 	} else {
+	// 		start = sm.slotsRange[i-1].End + 1
+	// 	}
+
+	// 	end = start + sm.rangeLen - 1
+	// 	//fmt.Println(factorNext)
+	// 	//fmt.Printf("l1: %f l2 %f l3: %f \n", float64(i+1), (factorNext+0.5)*sm.rangeFactor, float64(i+1)-(factorNext+0.5)*sm.rangeFactor)
+	// 	if sm.remain > 0 && float64(i+1)-(factorNext+0.5)*sm.rangeFactor > 0 {
+	// 		factorNext = factorNext + 1
+	// 		end++
+	// 	}
+
+	// 	if i+1 == len(sm.slotsRange) {
+	// 		end = SLOTS_NUM - 1
+	// 	}
+	// 	sm.slotsRange[i] = SlotsRange{
+	// 		Start: start,
+	// 		End:   end,
+	// 	}
+	// 	sm.nodes[i].Slots = sm.slotsRange[i]
+	// 	sm.nodeMap[i] = sm.nodes[i]
+	// }
 
 	return sm
 }
