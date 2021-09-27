@@ -7,6 +7,7 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -14,14 +15,14 @@ import (
 )
 
 type client struct {
-	ctx       context.Context
-	src       host.Host
-	target    peer.AddrInfo
-	connected bool
-	protocol  protocol.ID
+	ctx      context.Context
+	src      host.Host
+	target   peer.AddrInfo
+	protocol protocol.ID
 }
 
 func NewStoreClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid protocol.ID) core.DataNodeClient {
+	src.Peerstore().AddAddrs(target.ID, target.Addrs, peerstore.PermanentAddrTTL)
 	return &client{
 		ctx:      ctx,
 		src:      src,
@@ -35,21 +36,19 @@ func (cl *client) Close() error {
 }
 
 func (cl *client) IsTargetConnected() bool {
-	return cl.connected
+	return cl.src.Network().Connectedness(cl.target.ID) == network.Connected
 }
 
 func (cl *client) ConnectTarget() error {
 	if cl.IsTargetConnected() {
 		return nil
 	}
-	cl.src.Peerstore().AddAddrs(cl.target.ID, cl.target.Addrs, peerstore.PermanentAddrTTL)
-	cl.connected = true
-	return nil
+
+	return cl.src.Connect(cl.ctx, cl.target)
 }
 
 func (cl *client) Put(key string, value []byte) error {
 	_ = cl.ConnectTarget()
-	logging.Infof("put key: %s", key)
 
 	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
@@ -66,7 +65,6 @@ func (cl *client) Put(key string, value []byte) error {
 		logging.Error(err)
 		return err
 	}
-	logging.Info("client finish write to stream")
 
 	reply := &ReplyMessage{}
 
