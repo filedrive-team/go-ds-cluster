@@ -14,8 +14,8 @@ const (
 	PROTOCOL_V1 = "/cluster/store/0.0.1"
 )
 
-var readDeadline = time.Second * 2
-var writeDeadline = time.Second * 5
+var readDeadline = time.Second * 20
+var writeDeadline = time.Second * 20
 
 func ReadRequestMsg(s network.Stream, msg *RequestMessage) error {
 	if err := s.SetReadDeadline(time.Now().Add(readDeadline)); err != nil {
