@@ -36,11 +36,11 @@ func (cl *client) Close() error {
 }
 
 func (cl *client) IsTargetConnected() bool {
-	return cl.src.Network().Connectedness(cl.target.ID) == network.NotConnected
+	return cl.src.Network().Connectedness(cl.target.ID) == network.Connected
 }
 
 func (cl *client) ConnectTarget() error {
-	if cl.src.Network().Connectedness(cl.target.ID) == network.Connected {
+	if cl.IsTargetConnected() {
 		return nil
 	}
 
@@ -49,7 +49,6 @@ func (cl *client) ConnectTarget() error {
 
 func (cl *client) Put(key string, value []byte) error {
 	_ = cl.ConnectTarget()
-	logging.Infof("put key: %s", key)
 
 	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
 	if err != nil {
@@ -66,7 +65,6 @@ func (cl *client) Put(key string, value []byte) error {
 		logging.Error(err)
 		return err
 	}
-	logging.Info("client finish write to stream")
 
 	reply := &ReplyMessage{}
 
