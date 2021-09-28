@@ -33,6 +33,15 @@ func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, 
 	if err != nil {
 		return nil, err
 	}
+	// protect the connection with server node
+	cm := h.ConnManager()
+	for _, nd := range cfg.Nodes {
+		pid, err := peer.Decode(nd.ID)
+		if err != nil {
+			return nil, err
+		}
+		cm.Protect(pid, "cluster-node")
+	}
 	sm, err := shard.RestoreSlotsManager(shardNodes(cfg.Nodes))
 	if err != nil {
 		return nil, err
