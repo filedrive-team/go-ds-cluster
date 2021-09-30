@@ -24,7 +24,7 @@ var confpath string
 var mongodb string
 
 func init() {
-	log.SetLogLevelRegex("*", "info")
+	log.SetLogLevel("*", "info")
 }
 
 func main() {
