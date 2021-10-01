@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/filedrive-team/filehelper"
+	"github.com/filedrive-team/filehelper/dataset"
 	"github.com/filedrive-team/go-ds-cluster/clusterclient"
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/ipfs/go-blockservice"
@@ -17,6 +18,7 @@ import (
 	log "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/xerrors"
 )
 
 var logging = log.Logger("dsclient")
@@ -28,6 +30,7 @@ func init() {
 func main() {
 	local := []*cli.Command{
 		addCmd,
+		importDatasetCmd,
 	}
 
 	app := &cli.App{
@@ -39,6 +42,39 @@ func main() {
 		fmt.Println("Error: ", err)
 		os.Exit(1)
 	}
+}
+
+var importDatasetCmd = &cli.Command{
+	Name:  "import-dataset",
+	Usage: "import files from the specified dataset",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:     "dscluster-cfg",
+			Required: true,
+			Usage:    "specify the dscluster config path",
+		},
+		&cli.IntFlag{
+			Name:  "retry",
+			Value: 5,
+			Usage: "retry write file to datastore",
+		},
+		&cli.IntFlag{
+			Name:  "retry-wait",
+			Value: 1,
+			Usage: "sleep time before a retry",
+		},
+	},
+	Action: func(c *cli.Context) error {
+		ctx := context.Background()
+		dscluster := c.String("dscluster-cfg")
+
+		targetPath := c.Args().First()
+		if !filehelper.ExistDir(targetPath) {
+			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
+		}
+
+		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"))
+	},
 }
 
 var addCmd = &cli.Command{
