@@ -1,7 +1,9 @@
 package store
 
 import (
+	"bytes"
 	"context"
+	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
 	ds "github.com/ipfs/go-datastore"
@@ -9,6 +11,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
+
+const waitClose = 5
 
 type server struct {
 	ctx      context.Context
@@ -43,7 +47,12 @@ func (sv *server) Serve() {
 }
 
 func (sv *server) handleStream(s network.Stream) {
-	defer s.Close()
+	defer func() {
+		logging.Info("waitClose start")
+		<-time.After(time.Second * waitClose)
+		logging.Info("waitClose end")
+		s.Close()
+	}()
 	logging.Info("server incoming stream")
 	reqMsg := new(RequestMessage)
 
@@ -85,9 +94,11 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) has(s network.Stream, req *RequestMessage) {
+	logging.Infof("[has] key: %s", req.Key)
 	res := &ReplyMessage{}
 	exists, err := sv.ds.Has(ds.NewKey(req.Key))
 	if err != nil {
+		logging.Infof("[has] %#v", err)
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
 		} else {
@@ -96,6 +107,11 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 		res.Msg = err.Error()
 	} else {
 		res.Exists = exists
+	}
+	logging.Infof("[has] will write reply: %v", *res)
+	var b bytes.Buffer
+	if err := res.MarshalCBOR(&b); err == nil {
+		logging.Infof("[has] reply bytes: %v", b.Bytes())
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
 		logging.Error(err)

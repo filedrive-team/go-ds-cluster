@@ -22,15 +22,14 @@ import (
 var logging = log.Logger("dscluster")
 var confpath string
 var mongodb string
-
-func init() {
-	log.SetLogLevelRegex("*", "info")
-}
+var loglevel string
 
 func main() {
 	flag.StringVar(&confpath, "conf", ".dscluster", "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
+	flag.StringVar(&loglevel, "loglevel", "error", "")
 	flag.Parse()
+	log.SetLogLevel("*", loglevel)
 
 	ctxbg := context.Background()
 	ctxOption := fx.Provide(func() context.Context {
