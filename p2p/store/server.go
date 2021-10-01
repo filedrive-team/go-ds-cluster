@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
@@ -85,9 +86,11 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) has(s network.Stream, req *RequestMessage) {
+	logging.Infof("[has] key: %s", req.Key)
 	res := &ReplyMessage{}
 	exists, err := sv.ds.Has(ds.NewKey(req.Key))
 	if err != nil {
+		logging.Infof("[has] %#v", err)
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
 		} else {
@@ -96,6 +99,11 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 		res.Msg = err.Error()
 	} else {
 		res.Exists = exists
+	}
+	logging.Infof("[has] will write reply: %v", *res)
+	var b bytes.Buffer
+	if err := res.MarshalCBOR(&b); err == nil {
+		logging.Infof("[has] reply bytes: %v", b.Bytes())
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
 		logging.Error(err)
