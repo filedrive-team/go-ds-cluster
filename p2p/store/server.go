@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
 	ds "github.com/ipfs/go-datastore"
@@ -10,6 +11,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
+
+const waitClose = 5
 
 type server struct {
 	ctx      context.Context
@@ -44,7 +47,12 @@ func (sv *server) Serve() {
 }
 
 func (sv *server) handleStream(s network.Stream) {
-	defer s.Close()
+	defer func() {
+		logging.Info("waitClose start")
+		<-time.After(time.Second * waitClose)
+		logging.Info("waitClose end")
+		s.Close()
+	}()
 	logging.Info("server incoming stream")
 	reqMsg := new(RequestMessage)
 
