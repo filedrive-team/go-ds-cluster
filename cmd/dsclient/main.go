@@ -17,6 +17,7 @@ import (
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	log "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 )
@@ -64,11 +65,15 @@ var importDatasetCmd = &cli.Command{
 			Usage: "sleep time before a retry",
 		},
 	},
-	Action: func(c *cli.Context) error {
+	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
 		dscluster := c.String("dscluster-cfg")
 
 		targetPath := c.Args().First()
+		targetPath, err = homedir.Expand(targetPath)
+		if err != nil {
+			return err
+		}
 		if !filehelper.ExistDir(targetPath) {
 			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
 		}
@@ -93,6 +98,10 @@ var addCmd = &cli.Command{
 			return err
 		}
 		target := c.Args().First()
+		target, err = homedir.Expand(target)
+		if err != nil {
+			return err
+		}
 		var ds ds.Datastore
 		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
 		if err != nil {

@@ -23,6 +23,7 @@ require (
 	github.com/libp2p/go-libp2p-quic-transport v0.11.2
 	github.com/libp2p/go-libp2p-swarm v0.5.0
 	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-base32 v0.0.4 // indirect
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/multiformats/go-multihash v0.0.16 // indirect
