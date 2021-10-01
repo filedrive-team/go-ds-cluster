@@ -22,8 +22,10 @@ func ReadRequestMsg(s network.Stream, msg *RequestMessage) error {
 		return err
 	}
 	if err := cborutil.ReadCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
 
@@ -32,8 +34,10 @@ func WriteRequstMsg(s network.Stream, msg *RequestMessage) error {
 		return err
 	}
 	if err := cborutil.WriteCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
 
@@ -42,8 +46,10 @@ func ReadReplyMsg(s network.Stream, msg *ReplyMessage) error {
 		return err
 	}
 	if err := cborutil.ReadCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
 
@@ -52,8 +58,10 @@ func WriteReplyMsg(s network.Stream, msg *ReplyMessage) error {
 		return err
 	}
 	if err := cborutil.WriteCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
 
@@ -62,8 +70,10 @@ func ReadQueryResultEntry(s network.Stream, msg *QueryResultEntry) error {
 		return err
 	}
 	if err := cborutil.ReadCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
 
@@ -72,7 +82,9 @@ func WriteQueryResultEntry(s network.Stream, msg *QueryResultEntry) error {
 		return err
 	}
 	if err := cborutil.WriteCborRPC(s, msg); err != nil {
+		_ = s.SetWriteDeadline(time.Time{})
 		return err
 	}
+	_ = s.SetWriteDeadline(time.Time{})
 	return nil
 }
