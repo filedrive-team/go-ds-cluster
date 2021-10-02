@@ -3,8 +3,9 @@ module github.com/filedrive-team/go-ds-cluster
 go 1.16
 
 require (
+	github.com/beeleelee/go-ds-rpc v0.0.4 // indirect
 	github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4
-	github.com/filedrive-team/filehelper v0.0.2-0.20211001142810-bea1f94e739b
+	github.com/filedrive-team/filehelper v0.0.2
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/ipfs/go-blockservice v0.1.7
