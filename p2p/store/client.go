@@ -1,7 +1,6 @@
 package store
 
 import (
-	"bytes"
 	"context"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
@@ -73,10 +72,10 @@ func (cl *client) Put(key string, value []byte) error {
 		logging.Error(err)
 		return err
 	}
-	var b bytes.Buffer
-	if err := reply.MarshalCBOR(&b); err == nil {
-		logging.Infof("[Put] reply bytes: %v", b.Bytes())
-	}
+	// var b bytes.Buffer
+	// if err := reply.MarshalCBOR(&b); err == nil {
+	// 	logging.Infof("[Put] reply bytes: %v", b.Bytes())
+	// }
 	if reply.Code != ErrNone {
 		return xerrors.New(reply.Msg)
 	}
@@ -169,10 +168,10 @@ func (cl *client) Has(key string) (exists bool, err error) {
 		logging.Error(err)
 		return false, err
 	}
-	var b bytes.Buffer
-	if err := reply.MarshalCBOR(&b); err == nil {
-		logging.Infof("[Has] reply bytes: %v", b.Bytes())
-	}
+	// var b bytes.Buffer
+	// if err := reply.MarshalCBOR(&b); err == nil {
+	// 	logging.Infof("[Has] reply bytes: %v", b.Bytes())
+	// }
 	if reply.Code != ErrNone {
 		if reply.Code == ErrNotFound {
 			return false, nil
