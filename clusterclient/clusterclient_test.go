@@ -203,6 +203,65 @@ func TestClusterClient(t *testing.T) {
 		}
 	}
 }
+func TestReadOnlyClient(t *testing.T) {
+	//log.SetLogLevel("*", "info")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var err error
+
+	srv1Cfg, err := cfgFromString(srv1cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv1, err := serverFromCfg(ctx, srv1Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv1.Close()
+	srv1.Serve()
+
+	srv2Cfg, err := cfgFromString(srv2cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv2, err := serverFromCfg(ctx, srv2Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv2.Close()
+	srv2.Serve()
+
+	srv3Cfg, err := cfgFromString(srv3cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv3, err := serverFromCfg(ctx, srv3Cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv3.Close()
+	srv3.Serve()
+
+	clientCfg, err := cfgFromString(c1cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientCfg.ReadOnlyClient = true
+	client, err := NewClusterClient(ctx, clientCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	for _, item := range tdata {
+		err = client.Put(ds.NewKey(item.Key), item.Value)
+		if err == nil {
+			t.Fatal("readonly client should not has right to put data")
+		}
+	}
+
+}
 func TestClusterClientQuery(t *testing.T) {
 	//log.SetLogLevel("*", "info")
 	ctx, cancel := context.WithCancel(context.Background())
