@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Identity  Identity  `json:"identity"`
-	Addresses Addresses `json:"addresses"`
-	ConfPath  string    `json:"conf_path"`
-	Nodes     []Node    `json:"nodes"`
+	Identity      Identity  `json:"identity"`
+	Addresses     Addresses `json:"addresses"`
+	ConfPath      string    `json:"conf_path"`
+	Nodes         []Node    `json:"nodes"`
+	DisableDelete bool      `json:"disable_delete"`
 }
 
 type Node struct {

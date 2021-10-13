@@ -98,7 +98,7 @@ func TestDataNode(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, false)
 	defer server.Close()
 	server.Serve()
 
@@ -177,7 +177,7 @@ func TestDataNodeQuery(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, false)
 	defer server.Close()
 	server.Serve()
 

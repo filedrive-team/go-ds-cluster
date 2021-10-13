@@ -23,11 +23,13 @@ var logging = log.Logger("dscluster")
 var confpath string
 var mongodb string
 var loglevel string
+var disableDelete string
 
 func main() {
 	flag.StringVar(&confpath, "conf", ".dscluster", "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
 	flag.StringVar(&loglevel, "loglevel", "error", "")
+	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
 
@@ -35,11 +37,20 @@ func main() {
 	ctxOption := fx.Provide(func() context.Context {
 		return ctxbg
 	})
-
-	confOption, err := config.LoadConfig(confpath)
+	cfg, err := config.ReadConfig(confpath + "/config.json")
 	if err != nil {
-		logging.Fatal(err)
+		return
 	}
+	cfg.ConfPath = confpath
+	if disableDelete == "true" {
+		cfg.DisableDelete = true
+	} else if disableDelete == "false" {
+		cfg.DisableDelete = false
+	}
+	confOption := fx.Provide(func() *config.Config {
+		return cfg
+	})
+
 	var dsOption fx.Option
 	if mongodb != "" {
 		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle) (ds.Datastore, error) {
@@ -89,9 +100,9 @@ func main() {
 	}
 }
 
-func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore) {
+func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg *config.Config) {
 	ctx, cancel := context.WithCancel(context.Background())
-	server := store.NewStoreServer(ctx, h, pid, ds)
+	server := store.NewStoreServer(ctx, h, pid, ds, cfg.DisableDelete)
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {

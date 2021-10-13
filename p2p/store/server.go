@@ -14,18 +14,20 @@ import (
 const waitClose = 5
 
 type server struct {
-	ctx      context.Context
-	host     host.Host
-	protocol protocol.ID
-	ds       ds.Datastore
+	ctx           context.Context
+	host          host.Host
+	protocol      protocol.ID
+	ds            ds.Datastore
+	disableDelete bool
 }
 
-func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds ds.Datastore) core.DataNodeServer {
+func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds ds.Datastore, disableDelete bool) core.DataNodeServer {
 	return &server{
-		ctx:      ctx,
-		host:     h,
-		protocol: pid,
-		ds:       ds,
+		ctx:           ctx,
+		host:          h,
+		protocol:      pid,
+		ds:            ds,
+		disableDelete: disableDelete,
 	}
 }
 
@@ -148,10 +150,15 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 
 func (sv *server) delete(s network.Stream, req *RequestMessage) {
 	res := &ReplyMessage{}
-	err := sv.ds.Delete(ds.NewKey(req.Key))
-	if err != nil {
-		res.Code = ErrOthers
-		res.Msg = err.Error()
+
+	if sv.disableDelete {
+		logging.Infof("delete operation disabled, ignore delete %s", req.Key)
+	} else {
+		err := sv.ds.Delete(ds.NewKey(req.Key))
+		if err != nil {
+			res.Code = ErrOthers
+			res.Msg = err.Error()
+		}
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
 		logging.Error(err)

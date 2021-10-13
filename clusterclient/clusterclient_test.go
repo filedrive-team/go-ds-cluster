@@ -395,5 +395,5 @@ func serverFromCfg(ctx context.Context, cfg *config.Config) (core.DataNodeServer
 	}
 
 	memStore := ds.NewMapDatastore()
-	return store.NewStoreServer(ctx, h, store.PROTOCOL_V1, memStore), nil
+	return store.NewStoreServer(ctx, h, store.PROTOCOL_V1, memStore, false), nil
 }
