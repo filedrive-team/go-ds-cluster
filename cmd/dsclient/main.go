@@ -14,6 +14,7 @@ import (
 	dsmount "github.com/ipfs/go-datastore/mount"
 	dss "github.com/ipfs/go-datastore/sync"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
+	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	log "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
@@ -129,7 +130,8 @@ var addCmd = &cli.Command{
 			if err != nil {
 				return err
 			}
-			logging.Infof("imported file: %s, root: %s", item.Path, fileNode)
+			k := dshelp.MultihashToDsKey(fileNode.Cid().Hash())
+			logging.Infof("imported file: %s, root: %s, key: %s", item.Path, fileNode, k)
 		}
 
 		return nil

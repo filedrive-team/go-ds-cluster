@@ -13,6 +13,7 @@ require (
 	github.com/ipfs/go-datastore v0.4.6
 	github.com/ipfs/go-ds-flatfs v0.4.5
 	github.com/ipfs/go-ipfs-blockstore v1.0.4
+	github.com/ipfs/go-ipfs-ds-help v1.0.0 // indirect
 	github.com/ipfs/go-ipfs-exchange-offline v0.0.1
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/ipfs/go-merkledag v0.4.1
