@@ -103,22 +103,23 @@ func TestInitSlotsManager(t *testing.T) {
 }
 
 func TestNodeByKey(t *testing.T) {
-	sm7 := InitSlotManager(nodeFactory(7))
-	sm7.Check()
+	sm5 := InitSlotManager(nodeFactory(5))
+	sm5.Check()
 
-	nd, err := sm7.NodeByKey("filedag")
+	nd, err := sm5.NodeByKey("/CIQBU2WZQKNSBLKTBKZQ6AXNKJDNSPH6KGP4SBHLX3IMKXJSN5MNFRQ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if nd.Slots.Start != 7022 && nd.Slots.End != 9361 {
+	t.Logf("node start: %d, node end: %d", nd.Slots.Start, nd.Slots.End)
+	if nd.Slots.Start != 13107 && nd.Slots.End != 16383 {
 		t.Fatal("unexpected node")
 	}
 
-	nd, err = sm7.NodeByKey("/providers/CIQAAKFLOWAUFV2ZUI7ZIPQN76UV73UUWSVSVXCB22L6CH5K3F4J7ZQ/AASAQAISECO6C4ACMIE3DVPVQCA6OXIVOYI3WE5QTJG6Z3RKDLM5C6SNLDVHY")
+	nd, err = sm5.NodeByKey("/CIQE6RUJ44XEPJ2KJECAQ4RTF4TTOSY6V5TY5VANVE43NTBAYHFWF5Y")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if nd.Slots.Start != 9362 && nd.Slots.End != 11702 {
+	if nd.Slots.Start != 13107 && nd.Slots.End != 16383 {
 		t.Fatal("unexpected node")
 	}
 }
