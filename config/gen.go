@@ -23,7 +23,7 @@ func GenClusterConf(num int) ([]*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		sk, err := priv.Bytes()
+		sk, err := crypto.MarshalPrivateKey(priv)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func GenClientConf() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	sk, err := priv.Bytes()
+	sk, err := crypto.MarshalPrivateKey(priv)
 	if err != nil {
 		return nil, err
 	}
