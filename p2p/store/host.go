@@ -29,7 +29,6 @@ func makeBasicHost(listenPort string) (host.Host, error) {
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
-		libp2p.NATPortMap(),
 	}
 
 	return libp2p.New(context.Background(), opts...)
@@ -47,7 +46,6 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
 		libp2p.Transport(libp2pquic.NewTransport),
-		libp2p.NATPortMap(),
 	}
 	h, err := libp2p.New(context.Background(), opts...)
 	if err != nil {
