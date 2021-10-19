@@ -81,6 +81,55 @@ func TestP2P(t *testing.T) {
 }
 */
 
+func TestDisableDelete(t *testing.T) {
+	h1, err := makeBasicHost(utils.RandPort())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h2, err := makeBasicHost(utils.RandPort())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h2Info := peer.AddrInfo{
+		ID:    h2.ID(),
+		Addrs: h2.Addrs(),
+	}
+
+	ctx := context.Background()
+	memStore := ds.NewMapDatastore()
+
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, true)
+	defer server.Close()
+	server.Serve()
+
+	client := NewStoreClient(ctx, h1, h2Info, PROTOCOL_V1)
+	defer client.Close()
+
+	for _, d := range tdata {
+		err = client.Put(d.K, d.V)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, d := range tdata {
+		err := client.Delete(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, d := range tdata {
+		has, err := client.Has(d.K)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !has {
+			t.Fatalf("should have data %s", d.K)
+		}
+	}
+
+}
+
 func TestDataNode(t *testing.T) {
 	h1, err := makeBasicHost(utils.RandPort())
 	if err != nil {
@@ -98,7 +147,7 @@ func TestDataNode(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, false)
 	defer server.Close()
 	server.Serve()
 
@@ -177,7 +226,7 @@ func TestDataNodeQuery(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, false)
 	defer server.Close()
 	server.Serve()
 

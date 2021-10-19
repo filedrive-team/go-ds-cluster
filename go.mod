@@ -3,7 +3,6 @@ module github.com/filedrive-team/go-ds-cluster
 go 1.16
 
 require (
-	github.com/beeleelee/go-ds-rpc v0.0.4 // indirect
 	github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4
 	github.com/filedrive-team/filehelper v0.0.2
 	github.com/google/uuid v1.3.0 // indirect
@@ -13,6 +12,7 @@ require (
 	github.com/ipfs/go-datastore v0.4.6
 	github.com/ipfs/go-ds-flatfs v0.4.5
 	github.com/ipfs/go-ipfs-blockstore v1.0.4
+	github.com/ipfs/go-ipfs-ds-help v1.0.0
 	github.com/ipfs/go-ipfs-exchange-offline v0.0.1
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/ipfs/go-merkledag v0.4.1

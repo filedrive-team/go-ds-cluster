@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/filedrive-team/filehelper"
@@ -10,13 +11,16 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/clusterclient"
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/ipfs/go-blockservice"
+	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsmount "github.com/ipfs/go-datastore/mount"
 	dss "github.com/ipfs/go-datastore/sync"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
+	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	log "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
+	ufsio "github.com/ipfs/go-unixfs/io"
 	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
@@ -32,6 +36,8 @@ func main() {
 	local := []*cli.Command{
 		addCmd,
 		importDatasetCmd,
+		statCmd,
+		getCmd,
 	}
 
 	app := &cli.App{
@@ -129,7 +135,123 @@ var addCmd = &cli.Command{
 			if err != nil {
 				return err
 			}
-			logging.Infof("imported file: %s, root: %s", item.Path, fileNode)
+			k := dshelp.MultihashToDsKey(fileNode.Cid().Hash())
+			logging.Infof("imported file: %s, root: %s, key: %s", item.Path, fileNode, k)
+		}
+
+		return nil
+	},
+}
+
+var statCmd = &cli.Command{
+	Name:  "stat",
+	Usage: "",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "conf",
+			Usage: "specify the dscluster config path",
+			Value: "config.json",
+		},
+	},
+	Action: func(c *cli.Context) error {
+		cfg, err := config.ReadConfig(c.String("conf"))
+		if err != nil {
+			return err
+		}
+		target := c.Args().First()
+		tcid, err := cid.Decode(target)
+		if err != nil {
+			return err
+		}
+		k := dshelp.MultihashToDsKey(tcid.Hash())
+		logging.Infof("ds key: %s", k)
+		ctx := context.Background()
+		var ds ds.Datastore
+		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+		ds = dsmount.New([]dsmount.Mount{
+			{
+				Prefix:    bstore.BlockPrefix,
+				Datastore: ds,
+			},
+		})
+		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
+
+		dagNode, err := dagServ.Get(ctx, tcid)
+
+		if err != nil {
+			return err
+		}
+
+		stat, err := dagNode.Stat()
+		if err != nil {
+			return err
+		}
+		logging.Infof("%#v", stat)
+		return nil
+	},
+}
+
+var getCmd = &cli.Command{
+	Name:  "get",
+	Usage: "",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "conf",
+			Usage: "specify the dscluster config path",
+			Value: "config.json",
+		},
+	},
+	Action: func(c *cli.Context) error {
+		cfg, err := config.ReadConfig(c.String("conf"))
+		if err != nil {
+			return err
+		}
+		args := c.Args().Slice()
+		tcid, err := cid.Decode(args[0])
+		if err != nil {
+			return err
+		}
+		targetPath := args[1]
+		if targetPath == "" {
+			targetPath = args[0]
+		}
+		k := dshelp.MultihashToDsKey(tcid.Hash())
+		logging.Infof("ds key: %s", k)
+		ctx := context.Background()
+		var ds ds.Datastore
+		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+		ds = dsmount.New([]dsmount.Mount{
+			{
+				Prefix:    bstore.BlockPrefix,
+				Datastore: ds,
+			},
+		})
+		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
+
+		dagNode, err := dagServ.Get(ctx, tcid)
+
+		if err != nil {
+			return err
+		}
+		fdr, err := ufsio.NewDagReader(ctx, dagNode, dagServ)
+		if err != nil {
+			return err
+		}
+		f, err := os.Create(targetPath)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(f, fdr)
+		if err != nil {
+			return err
 		}
 
 		return nil
