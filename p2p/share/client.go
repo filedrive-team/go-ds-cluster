@@ -18,7 +18,7 @@ type Client struct {
 	protocol protocol.ID
 }
 
-func NewStoreClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid protocol.ID) *Client {
+func NewShareClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid protocol.ID) *Client {
 	src.Peerstore().AddAddrs(target.ID, target.Addrs, peerstore.PermanentAddrTTL)
 	return &Client{
 		ctx:      ctx,

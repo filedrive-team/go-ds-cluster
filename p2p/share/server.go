@@ -20,7 +20,7 @@ type Server struct {
 	cfg      *config.Config
 }
 
-func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, cfg *config.Config) *Server {
+func NewShareServer(ctx context.Context, h host.Host, pid protocol.ID, cfg *config.Config) *Server {
 	return &Server{
 		ctx:      ctx,
 		host:     h,
