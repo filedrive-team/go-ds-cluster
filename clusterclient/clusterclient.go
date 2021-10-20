@@ -7,6 +7,7 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/core"
+	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	"github.com/filedrive-team/go-ds-cluster/shard"
 	ds "github.com/ipfs/go-datastore"
@@ -30,7 +31,7 @@ type ClusterClient struct {
 }
 
 func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, error) {
-	h, err := store.HostFromConf(cfg)
+	h, err := p2p.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/core"
+	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
@@ -448,7 +449,7 @@ func cfgFromString(str string) (*config.Config, error) {
 }
 
 func serverFromCfg(ctx context.Context, cfg *config.Config) (core.DataNodeServer, error) {
-	h, err := store.HostFromConf(cfg)
+	h, err := p2p.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}

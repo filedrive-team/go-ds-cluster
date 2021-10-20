@@ -1,4 +1,4 @@
-package store
+package p2p
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func init() {
 	swarm.DialTimeoutLocal = transport.DialTimeout
 }
 
-func makeBasicHost(listenPort string) (host.Host, error) {
+func MakeBasicHost(listenPort string) (host.Host, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
 	if err != nil {
 		return nil, err

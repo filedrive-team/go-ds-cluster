@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/utils"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
@@ -82,11 +83,11 @@ func TestP2P(t *testing.T) {
 */
 
 func TestDisableDelete(t *testing.T) {
-	h1, err := makeBasicHost(utils.RandPort())
+	h1, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(utils.RandPort())
+	h2, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,11 +132,11 @@ func TestDisableDelete(t *testing.T) {
 }
 
 func TestDataNode(t *testing.T) {
-	h1, err := makeBasicHost(utils.RandPort())
+	h1, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(utils.RandPort())
+	h2, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,11 +211,11 @@ func TestDataNode(t *testing.T) {
 }
 
 func TestDataNodeQuery(t *testing.T) {
-	h1, err := makeBasicHost(utils.RandPort())
+	h1, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}
-	h2, err := makeBasicHost(utils.RandPort())
+	h2, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		t.Fatal(err)
 	}

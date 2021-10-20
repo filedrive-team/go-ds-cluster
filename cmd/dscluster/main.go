@@ -10,6 +10,7 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/mongods"
+	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
@@ -130,7 +131,7 @@ func ProtocolID() protocol.ID {
 }
 
 func BasicHost(lc fx.Lifecycle, cfg *config.Config) (host.Host, error) {
-	h, err := store.HostFromConf(cfg)
+	h, err := p2p.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
 	}
