@@ -72,7 +72,7 @@ var clusterCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(path.Join(outdir, "config.json"), cfgbytes, 0644)
+		err = ioutil.WriteFile(path.Join(outdir, config.DefaultConfigJson), cfgbytes, 0644)
 		if err != nil {
 			return err
 		}
