@@ -28,6 +28,8 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 - any node in the cluster can be used has ipfs datastore, sharding data to data-nodes in the cluster
 - a key-value table of all data in the datastore has been maintained by every node
 - the relation between hash slots and data-node also been maintained by every node
+  
+![architecture view](./doc/ds-cluster.png)
 
 ## Roadmap
 
