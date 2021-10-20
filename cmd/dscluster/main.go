@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -27,9 +28,9 @@ var loglevel string
 var disableDelete string
 
 func main() {
-	flag.StringVar(&confpath, "conf", ".dscluster", "")
+	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
-	flag.StringVar(&loglevel, "loglevel", "error", "")
+	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
@@ -38,8 +39,13 @@ func main() {
 	ctxOption := fx.Provide(func() context.Context {
 		return ctxbg
 	})
-	cfg, err := config.ReadConfig(confpath + "/config.json")
+	cfg, err := config.ReadConfig(path.Join(confpath, config.DefaultConfigJson))
 	if err != nil {
+		return
+	}
+	// bootstrap node should hold the cluster nodes info
+	if cfg.BootstrapNode && len(cfg.Nodes) == 0 {
+		logging.Error("Bootstrap node but doesn't hold cluster nodes info")
 		return
 	}
 	cfg.ConfPath = confpath

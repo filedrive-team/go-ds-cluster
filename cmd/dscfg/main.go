@@ -9,6 +9,7 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	log "github.com/ipfs/go-log/v2"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 )
@@ -41,9 +42,10 @@ var clusterCmd = &cli.Command{
 	Usage: "generate cluster config files",
 	Flags: []cli.Flag{
 		&cli.IntFlag{
-			Name:  "cluster-node-number",
-			Value: 3,
-			Usage: "specify the cluster node number",
+			Name:     "cluster-node-number",
+			Aliases:  []string{"nn"},
+			Required: true,
+			Usage:    "specify the cluster node number",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -51,29 +53,30 @@ var clusterCmd = &cli.Command{
 		if outdir == "" {
 			return xerrors.Errorf("usage: dscfg client [output-dir]")
 		}
-		finfo, err := os.Stat(outdir)
+		outdir, err := homedir.Expand(outdir)
 		if err != nil {
 			return err
 		}
-		if !finfo.IsDir() {
-			return xerrors.Errorf("usage: dscfg client [output-dir]")
-		}
-		nodeNum := c.Int("cluster-node-number")
-		cfgs, err := config.GenClusterConf(nodeNum)
+		err = os.MkdirAll(outdir, 0755)
 		if err != nil {
 			return err
 		}
 
-		for i, clientCfg := range cfgs {
-			cfgbytes, err := json.MarshalIndent(&clientCfg, "", "\t")
-			if err != nil {
-				return err
-			}
-			err = ioutil.WriteFile(path.Join(outdir, fmt.Sprintf("cluster_%02d.json", i)), cfgbytes, 0644)
-			if err != nil {
-				return err
-			}
+		nodeNum := c.Int("cluster-node-number")
+		clustercfg, err := config.GenClusterConf(nodeNum)
+		if err != nil {
+			return err
 		}
+
+		cfgbytes, err := json.MarshalIndent(&clustercfg, "", "\t")
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(path.Join(outdir, "config.json"), cfgbytes, 0644)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	},
 }

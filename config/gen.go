@@ -13,10 +13,7 @@ import (
 // GenClusterConf
 // Generate config json files for server nodes in cluster
 // num - how many servers in the cluster
-//  - will generate [num] json files
-//  - each config has different Identity and Address but has same Nodes info
-//  - Nodes hold all info about server nodes in cluster
-func GenClusterConf(num int) ([]*Config, error) {
+func GenClusterConf(num int) (*Config, error) {
 	nodeIdentities := make([]Identity, num)
 	for i := range nodeIdentities {
 		priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
@@ -56,16 +53,17 @@ func GenClusterConf(num int) ([]*Config, error) {
 			},
 		}
 	}
-	res := make([]*Config, num)
-	for i := range nodeIdentities {
-		res[i] = &Config{
-			Addresses: Addresses{
-				Swarm: cfgNodes[i].Swarm,
-			},
-			Identity: nodeIdentities[i],
-			Nodes:    cfgNodes,
-		}
+
+	res := &Config{
+		Addresses: Addresses{
+			Swarm: cfgNodes[0].Swarm,
+		},
+		Identity:      nodeIdentities[0],
+		Nodes:         cfgNodes,
+		IdentityList:  nodeIdentities,
+		BootstrapNode: true,
 	}
+
 	return res, nil
 }
 

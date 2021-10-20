@@ -8,13 +8,18 @@ import (
 	"go.uber.org/fx"
 )
 
+const DefaultConfigPath = ".dscluster"
+const DefaultConfigJson = "config.json"
+
 type Config struct {
-	Identity       Identity  `json:"identity"`
-	Addresses      Addresses `json:"addresses"`
-	ConfPath       string    `json:"conf_path"`
-	Nodes          []Node    `json:"nodes"`
-	DisableDelete  bool      `json:"disable_delete"`
-	ReadOnlyClient bool      `json:"read_only_client"`
+	Identity       Identity   `json:"identity"`
+	Addresses      Addresses  `json:"addresses"`
+	ConfPath       string     `json:"conf_path"`
+	Nodes          []Node     `json:"nodes"`
+	DisableDelete  bool       `json:"disable_delete"`
+	ReadOnlyClient bool       `json:"read_only_client"`
+	BootstrapNode  bool       `json:"bootstrap_node"`
+	IdentityList   []Identity `json:"identity_list"`
 }
 
 type Node struct {

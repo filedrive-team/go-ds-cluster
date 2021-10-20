@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 
 	"github.com/filedrive-team/filehelper"
 	"github.com/filedrive-team/filehelper/dataset"
@@ -41,7 +42,14 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:     "dsclient",
+		Name: "dsclient",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "conf",
+				Usage: "specify the dscluster config path",
+				Value: config.DefaultConfigPath,
+			},
+		},
 		Commands: local,
 	}
 
@@ -91,15 +99,8 @@ var importDatasetCmd = &cli.Command{
 var addCmd = &cli.Command{
 	Name:  "add",
 	Usage: "import single file to ds-cluster",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
-		cfg, err := config.ReadConfig(c.String("conf"))
+		cfg, err := config.ReadConfig(path.Join(c.String("conf"), config.DefaultConfigJson))
 		if err != nil {
 			return err
 		}
@@ -146,15 +147,8 @@ var addCmd = &cli.Command{
 var statCmd = &cli.Command{
 	Name:  "stat",
 	Usage: "",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
-		cfg, err := config.ReadConfig(c.String("conf"))
+		cfg, err := config.ReadConfig(path.Join(c.String("conf"), config.DefaultConfigJson))
 		if err != nil {
 			return err
 		}
@@ -198,13 +192,6 @@ var statCmd = &cli.Command{
 var getCmd = &cli.Command{
 	Name:  "get",
 	Usage: "",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
 		cfg, err := config.ReadConfig(c.String("conf"))
 		if err != nil {
