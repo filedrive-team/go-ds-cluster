@@ -12,6 +12,7 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
+	"github.com/filedrive-team/go-ds-cluster/p2p/share"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	ds "github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
@@ -44,10 +45,18 @@ func main() {
 		return
 	}
 	// bootstrap node should hold the cluster nodes info
-	if cfg.BootstrapNode && len(cfg.Nodes) == 0 {
-		logging.Error("Bootstrap node but doesn't hold cluster nodes info")
+	if cfg.BootstrapNode && len(cfg.Nodes) == 0 || len(cfg.IdentityList) == 0 {
+		logging.Error("Bootstrap node but doesn't hold cluster nodes info or doesn't hold indentity info")
 		return
 	}
+	// todo:
+	// currently use idx 0 identity as bootstrap node
+	// need a way make it more flexible
+	if cfg.BootstrapNode && cfg.Identity.PeerID != cfg.IdentityList[0].PeerID {
+		logging.Error("Bootstrap node identity not match")
+		return
+	}
+
 	cfg.ConfPath = confpath
 	if disableDelete == "true" {
 		cfg.DisableDelete = true
@@ -110,14 +119,25 @@ func main() {
 func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg *config.Config) {
 	ctx, cancel := context.WithCancel(context.Background())
 	server := store.NewStoreServer(ctx, h, pid, ds, cfg.DisableDelete)
+	var shareSrv *share.Server
+	if cfg.BootstrapNode {
+		shareSrv = share.NewShareServer(ctx, h, cfg)
+	}
 
 	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
+		OnStop: func(ctx context.Context) (err error) {
 			defer cancel()
-			return server.Close()
+			if cfg.BootstrapNode {
+				err = shareSrv.Close()
+			}
+			err = server.Close()
+			return
 		},
 		OnStart: func(ctx context.Context) error {
 			server.Serve()
+			if cfg.BootstrapNode {
+				shareSrv.Serve()
+			}
 			return nil
 		},
 	})

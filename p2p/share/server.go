@@ -20,11 +20,11 @@ type Server struct {
 	cfg      *config.Config
 }
 
-func NewShareServer(ctx context.Context, h host.Host, pid protocol.ID, cfg *config.Config) *Server {
+func NewShareServer(ctx context.Context, h host.Host, cfg *config.Config) *Server {
 	return &Server{
 		ctx:      ctx,
 		host:     h,
-		protocol: pid,
+		protocol: PROTOCOL_V1,
 		cfg:      cfg,
 	}
 }
@@ -49,7 +49,7 @@ func (sv *Server) handleStream(s network.Stream) {
 		logging.Info("waitClose end")
 		s.Close()
 	}()
-	logging.Info("server incoming stream")
+	logging.Info("serve incoming stream")
 	reqMsg := new(ShareRequest)
 
 	if err := ReadRequest(s, reqMsg); err != nil {

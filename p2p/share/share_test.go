@@ -42,14 +42,14 @@ func TestShareNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	server := NewShareServer(ctx, h2, PROTOCOL_V1, &config.Config{
+	server := NewShareServer(ctx, h2, &config.Config{
 		Nodes:        cfgNodes,
 		IdentityList: []config.Identity{identity},
 	})
 	defer server.Close()
 	server.Serve()
 
-	client := NewShareClient(ctx, h1, h2Info, PROTOCOL_V1)
+	client := NewShareClient(ctx, h1, h2Info)
 	defer client.Close()
 
 	// test get cluster info
