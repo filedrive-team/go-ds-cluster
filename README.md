@@ -45,41 +45,50 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 <!-- GETTING STARTED -->
 ## Getting Started
 
-#### Generate config files
-
+#### Build binaries
 ```shell
-# build config json generator
 make dscfg
-
-# generate config json files for 3 server nodes cluster
-./dscfg cluster --cluster-node-number=3 [output-dir]
-ls [outpu-dir]
-# cluster_00.json cluster_01.json cluster_02.json
+make dscluster
+make dsclient
 ```
 
-#### Setup server nodes of the cluster
-```shell
-make dscluster
+#### Generate config file for bootstrap
 
-# copy to directory where to keep the executable binary and config for serv1
-cp dscluster [srv1-dir]
-cp [output-dir]/cluster_00.json [srv1-dir]/config.json
-cd [srv1-dir]
+```shell
+
+# generate config json files for 3 server nodes cluster
+# [srv01-dir] can be arbitrary path you like to keep the cluster config info
+./dscfg cluster --cluster-node-number=3 [srv01-dir]
+# it will print the p2p address of the bootstrap address, like:
+# /ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL
+# remember to change the 0.0.0.0 to the right ip address of the bootstrapper node if it runs on another pc
+ls [srv01-dir]
+# config.json 
+```
+For test case, we can run three nodes on one pc, using tmux will be helpful.
+
+#### Running bootstrapper node
+```shell
 
 # using flatfs as datastore
 ./dscluster --conf=[srv1cfg-dir]
 # or using mongods as datastore
 # ./dscluster --conf=[srv1cfg-dir] --mongodb="mongodb://localhost:27017" 
 
-cp dscluster [srv2-dir]
-cp [output-dir]/cluster_01.json [srv2-dir]/config.json
-cd [srv2-dir]
-./dscluster --conf=[srv2cfg-dir]
+# as the we can retrieve cluster config info from bootstapper node
+# there is no need to manual copy config to other server nodes config dir
 
-cp dscluster [srv3-dir]
-cp [output-dir]/cluster_02.json [srv3-dir]/config.json
-cd [srv3-dir]
-./dscluster --conf=[srv3cfg-dir]
+# run node with --bootstrapper and --identity flags
+# if there hasn't config.json in config dir, it will retrieve info from bootstrapper node
+# then write it to config.json
+./dscluster --conf=[srv2cfg-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=1
+
+
+./dscluster --conf=[srv3cfg-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=2
+
+# once the config.json has been generated, we can run node use:
+# ./dscluster --conf=[config-dir]
+# default value for --conf is ".dscluster"
 ```
 
 #### Embed into ipfs as a plugin
