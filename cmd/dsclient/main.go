@@ -2,14 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/filedrive-team/filehelper"
 	"github.com/filedrive-team/filehelper/dataset"
 	"github.com/filedrive-team/go-ds-cluster/clusterclient"
 	"github.com/filedrive-team/go-ds-cluster/config"
+	"github.com/filedrive-team/go-ds-cluster/p2p"
+	"github.com/filedrive-team/go-ds-cluster/p2p/share"
+	"github.com/filedrive-team/go-ds-cluster/utils"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
@@ -21,7 +27,9 @@ import (
 	log "github.com/ipfs/go-log/v2"
 	"github.com/ipfs/go-merkledag"
 	ufsio "github.com/ipfs/go-unixfs/io"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/mitchellh/go-homedir"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 )
@@ -38,10 +46,18 @@ func main() {
 		importDatasetCmd,
 		statCmd,
 		getCmd,
+		initCmd,
 	}
 
 	app := &cli.App{
-		Name:     "dsclient",
+		Name: "dsclient",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "conf",
+				Usage: "specify the dscluster config path",
+				Value: config.DefaultConfigPath,
+			},
+		},
 		Commands: local,
 	}
 
@@ -91,18 +107,22 @@ var importDatasetCmd = &cli.Command{
 var addCmd = &cli.Command{
 	Name:  "add",
 	Usage: "import single file to ds-cluster",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
-		cfg, err := config.ReadConfig(c.String("conf"))
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
 		if err != nil {
 			return err
 		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
 		target := c.Args().First()
 		target, err = homedir.Expand(target)
 		if err != nil {
@@ -146,18 +166,22 @@ var addCmd = &cli.Command{
 var statCmd = &cli.Command{
 	Name:  "stat",
 	Usage: "",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
-		cfg, err := config.ReadConfig(c.String("conf"))
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
 		if err != nil {
 			return err
 		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
 		target := c.Args().First()
 		tcid, err := cid.Decode(target)
 		if err != nil {
@@ -198,18 +222,22 @@ var statCmd = &cli.Command{
 var getCmd = &cli.Command{
 	Name:  "get",
 	Usage: "",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "conf",
-			Usage: "specify the dscluster config path",
-			Value: "config.json",
-		},
-	},
 	Action: func(c *cli.Context) error {
-		cfg, err := config.ReadConfig(c.String("conf"))
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
 		if err != nil {
 			return err
 		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
 		args := c.Args().Slice()
 		tcid, err := cid.Decode(args[0])
 		if err != nil {
@@ -256,4 +284,90 @@ var getCmd = &cli.Command{
 
 		return nil
 	},
+}
+
+var initCmd = &cli.Command{
+	Name: "init",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "bootstrapper",
+			Usage: "",
+		},
+	},
+	Usage: "",
+	Action: func(c *cli.Context) error {
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			cfg, err = config.GenClientConf()
+			if err != nil {
+				return err
+			}
+		}
+		ctxbg := context.Background()
+		bootstrapper := c.String("bootstrapper")
+		if len(cfg.Nodes) == 0 {
+			if bootstrapper == "" {
+				return xerrors.Errorf("missing cluster nodes config info")
+			}
+			err = initClientConfig(ctxbg, cfg, confPath, bootstrapper)
+			if err != nil {
+				logging.Error(err)
+				return err
+			}
+		}
+		bs, err := json.MarshalIndent(cfg, "", "\t")
+		if err != nil {
+			return err
+		}
+		logging.Infof("%s", bs)
+		return nil
+	},
+}
+
+func initClientConfig(ctxbg context.Context, cfg *config.Config, confPath, bootstrapper string) (err error) {
+	h1, err := p2p.MakeBasicHost(utils.RandPort())
+	if err != nil {
+		return
+	}
+	defer h1.Close()
+	baddr, err := ma.NewMultiaddr(bootstrapper)
+	if err != nil {
+		return
+	}
+	pinfo, err := peer.AddrInfoFromP2pAddr(baddr)
+	if err != nil {
+		return
+	}
+
+	client := share.NewShareClient(ctxbg, h1, *pinfo)
+
+	bs, err := client.GetClusterInfo()
+	if err != nil {
+		return
+	}
+	nodes := make([]config.Node, 0)
+	err = json.Unmarshal(bs, &nodes)
+	if err != nil {
+		return
+	}
+	cfg.Nodes = nodes
+	cfgbs, err := json.MarshalIndent(cfg, "", "\t")
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(path.Join(confPath, config.DefaultConfigJson), cfgbs, 0644)
+	if err != nil {
+		return
+	}
+	return
 }

@@ -54,7 +54,7 @@ func (sv *server) handleStream(s network.Stream) {
 		logging.Info("waitClose end")
 		s.Close()
 	}()
-	logging.Info("server incoming stream")
+	logging.Info("serve incoming stream")
 	reqMsg := new(RequestMessage)
 
 	if err := ReadRequestMsg(s, reqMsg); err != nil {

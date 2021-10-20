@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/filedrive-team/go-ds-cluster/p2p/share"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	gen "github.com/whyrusleeping/cbor-gen"
 )
@@ -19,5 +20,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
+	err = gen.WriteTupleEncodersToFile("./p2p/share/cbor_gen.go", "share",
+		share.ShareRequest{},
+		share.ShareReply{},
+	)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

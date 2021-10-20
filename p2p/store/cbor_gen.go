@@ -310,7 +310,7 @@ func (t *ReplyMessage) UnmarshalCBOR(r io.Reader) error {
 	return nil
 }
 
-var lengthBufQueryResultEntry = []byte{131}
+var lengthBufQueryResultEntry = []byte{133}
 
 func (t *QueryResultEntry) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -322,6 +322,23 @@ func (t *QueryResultEntry) MarshalCBOR(w io.Writer) error {
 	}
 
 	scratch := make([]byte, 9)
+
+	// t.Code (store.ErrCode) (uint8)
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Code)); err != nil {
+		return err
+	}
+
+	// t.Msg (string) (string)
+	if len(t.Msg) > cbg.MaxLength {
+		return xerrors.Errorf("Value in field t.Msg was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.Msg))); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, string(t.Msg)); err != nil {
+		return err
+	}
 
 	// t.Key (string) (string)
 	if len(t.Key) > cbg.MaxLength {
@@ -375,10 +392,33 @@ func (t *QueryResultEntry) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 3 {
+	if extra != 5 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
+	// t.Code (store.ErrCode) (uint8)
+
+	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajUnsignedInt {
+		return fmt.Errorf("wrong type for uint8 field")
+	}
+	if extra > math.MaxUint8 {
+		return fmt.Errorf("integer in input was too large for uint8 field")
+	}
+	t.Code = ErrCode(extra)
+	// t.Msg (string) (string)
+
+	{
+		sval, err := cbg.ReadStringBuf(br, scratch)
+		if err != nil {
+			return err
+		}
+
+		t.Msg = string(sval)
+	}
 	// t.Key (string) (string)
 
 	{
