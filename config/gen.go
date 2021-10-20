@@ -63,6 +63,7 @@ func GenClusterConf(num int) (*Config, error) {
 		IdentityList:  nodeIdentities,
 		BootstrapNode: true,
 	}
+	fmt.Printf("%s/p2p/%s\n", cfgNodes[0].Swarm[0], cfgNodes[0].Node.ID)
 
 	return res, nil
 }
