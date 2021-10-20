@@ -39,6 +39,7 @@ type ShareRequest struct {
 
 type ShareReply struct {
 	Code ErrCode
+	Msg  string
 	Type InfoType
 	Info []byte
 }
