@@ -73,3 +73,34 @@ func (cl *Client) GetClusterInfo() (value []byte, err error) {
 	}
 	return reply.Info, nil
 }
+
+func (cl *Client) GetIdentity(idx int) (value []byte, err error) {
+	_ = cl.ConnectTarget()
+
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
+	req := &ShareRequest{
+		Type:  InfoIdentity,
+		Index: int64(idx),
+	}
+
+	if err := WriteRequst(s, req); err != nil {
+		logging.Error(err)
+		return nil, err
+	}
+
+	reply := &ShareReply{}
+
+	if err := ReadReply(s, reply); err != nil {
+		logging.Error(err)
+		return nil, err
+	}
+	if reply.Code != ErrNone {
+		return nil, xerrors.New(reply.Msg)
+	}
+	return reply.Info, nil
+}

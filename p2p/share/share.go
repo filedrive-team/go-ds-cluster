@@ -22,6 +22,7 @@ type InfoType uint8
 
 const (
 	InfoClusterNodes InfoType = 1 + iota
+	InfoIdentity
 )
 
 type ErrCode uint8
@@ -34,7 +35,8 @@ const (
 )
 
 type ShareRequest struct {
-	Type InfoType
+	Type  InfoType
+	Index int64
 }
 
 type ShareReply struct {

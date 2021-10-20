@@ -18,7 +18,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufShareRequest = []byte{129}
+var lengthBufShareRequest = []byte{130}
 
 func (t *ShareRequest) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -34,6 +34,17 @@ func (t *ShareRequest) MarshalCBOR(w io.Writer) error {
 	// t.Type (share.InfoType) (uint8)
 	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Type)); err != nil {
 		return err
+	}
+
+	// t.Index (int64) (int64)
+	if t.Index >= 0 {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Index)); err != nil {
+			return err
+		}
+	} else {
+		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.Index-1)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -52,7 +63,7 @@ func (t *ShareRequest) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 1 {
+	if extra != 2 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -69,10 +80,35 @@ func (t *ShareRequest) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("integer in input was too large for uint8 field")
 	}
 	t.Type = InfoType(extra)
+	// t.Index (int64) (int64)
+	{
+		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.Index = int64(extraI)
+	}
 	return nil
 }
 
-var lengthBufShareReply = []byte{131}
+var lengthBufShareReply = []byte{132}
 
 func (t *ShareReply) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -87,6 +123,18 @@ func (t *ShareReply) MarshalCBOR(w io.Writer) error {
 
 	// t.Code (share.ErrCode) (uint8)
 	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Code)); err != nil {
+		return err
+	}
+
+	// t.Msg (string) (string)
+	if len(t.Msg) > cbg.MaxLength {
+		return xerrors.Errorf("Value in field t.Msg was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.Msg))); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, string(t.Msg)); err != nil {
 		return err
 	}
 
@@ -124,7 +172,7 @@ func (t *ShareReply) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 3 {
+	if extra != 4 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -141,6 +189,16 @@ func (t *ShareReply) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("integer in input was too large for uint8 field")
 	}
 	t.Code = ErrCode(extra)
+	// t.Msg (string) (string)
+
+	{
+		sval, err := cbg.ReadStringBuf(br, scratch)
+		if err != nil {
+			return err
+		}
+
+		t.Msg = string(sval)
+	}
 	// t.Type (share.InfoType) (uint8)
 
 	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)

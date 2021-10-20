@@ -61,6 +61,8 @@ func (sv *Server) handleStream(s network.Stream) {
 	switch reqMsg.Type {
 	case InfoClusterNodes:
 		sv.sendClusterInfo(s, reqMsg)
+	case InfoIdentity:
+		sv.sendIdentity(s, reqMsg)
 	default:
 		logging.Warnf("unhandled type: %v", reqMsg.Type)
 	}
@@ -71,6 +73,31 @@ func (sv *Server) sendClusterInfo(s network.Stream, req *ShareRequest) {
 		Type: InfoClusterNodes,
 	}
 	bs, err := json.Marshal(sv.cfg.Nodes)
+	if err != nil {
+		res.Code = ErrOthers
+		res.Msg = err.Error()
+	} else {
+		res.Info = bs
+	}
+
+	if err := WriteReply(s, res); err != nil {
+		logging.Error(err)
+	}
+}
+
+func (sv *Server) sendIdentity(s network.Stream, req *ShareRequest) {
+	res := &ShareReply{
+		Type: InfoIdentity,
+	}
+	if int(req.Index)+1 > len(sv.cfg.IdentityList) {
+		res.Code = ErrOthers
+		res.Msg = "request identity index out of range"
+		if err := WriteReply(s, res); err != nil {
+			logging.Error(err)
+		}
+		return
+	}
+	bs, err := json.Marshal(sv.cfg.IdentityList[req.Index])
 	if err != nil {
 		res.Code = ErrOthers
 		res.Msg = err.Error()
