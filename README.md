@@ -76,7 +76,9 @@ For test case, we can run three nodes on one pc, using tmux will be helpful.
 ./dscluster --conf=[srv01-dir]
 # or using mongods as datastore
 # ./dscluster --conf=[srv1cfg-dir] --mongodb="mongodb://localhost:27017" 
-
+```
+#### Running other sharding nodes
+```
 # as the we can retrieve cluster config info from bootstapper node
 # there is no need to manual copy config to other server nodes config dir
 
@@ -118,7 +120,7 @@ git clone git@github.com:ipfs/go-ipfs.git
 cd go-ipfs
 
 # Add the plugin to the preload list: plugin/loader/preload_list
-echo "clusterds github.com/filedrive-team/go-ds-cluster/ipfsplugin *" >> plugin/loader/preload_list
+echo "clusterds github.com/filedrive-team/ipfsplugins/clusterds *" >> plugin/loader/preload_list
 make build
 ```
 Config customed ipfs
