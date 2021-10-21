@@ -45,6 +45,8 @@ We knew [ipfs-cluster](https://github.com/ipfs/ipfs-cluster), it offers a way to
 <!-- GETTING STARTED -->
 ## Getting Started
 
+Instructions about how to run 3 sharding nodes cluster
+
 #### Build binaries
 ```shell
 make dscfg
@@ -71,7 +73,7 @@ For test case, we can run three nodes on one pc, using tmux will be helpful.
 ```shell
 
 # using flatfs as datastore
-./dscluster --conf=[srv1cfg-dir]
+./dscluster --conf=[srv01-dir]
 # or using mongods as datastore
 # ./dscluster --conf=[srv1cfg-dir] --mongodb="mongodb://localhost:27017" 
 
@@ -81,14 +83,29 @@ For test case, we can run three nodes on one pc, using tmux will be helpful.
 # run node with --bootstrapper and --identity flags
 # if there hasn't config.json in config dir, it will retrieve info from bootstrapper node
 # then write it to config.json
-./dscluster --conf=[srv2cfg-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=1
+./dscluster --conf=[srv02-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=1
 
 
-./dscluster --conf=[srv3cfg-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=2
+./dscluster --conf=[srv03-dir] --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL --identity=2
 
 # once the config.json has been generated, we can run node use:
 # ./dscluster --conf=[config-dir]
 # default value for --conf is ".dscluster"
+```
+After all three sharding nodes is up, we can use `dsclient` put data into cluster
+The `dsclient` also need retrieve cluster info from bootstrapper node at first
+```
+# use another tmux session
+./dsclient --conf=[client-cfg-dir] init --bootstrapper=/ip4/0.0.0.0/tcp/6735/p2p/QmVg7CwtGbRx1ovFE3jktF76jQz1Z3d9hd2yKKHvg1EWKL 
+# this cmd will retrieve cluster info and write it to client config file
+```
+If everything go ok, we can put files into cluster
+```
+./dsclient --conf=[client-cfg-dir] add /path/to/file
+```
+Retrieve file from cluster
+```
+./dsclient --conf=[client-cfg-dir] get [cid] /path/to/save/file
 ```
 
 #### Embed into ipfs as a plugin
