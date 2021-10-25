@@ -86,10 +86,16 @@ var importDatasetCmd = &cli.Command{
 			Value: 1,
 			Usage: "sleep time before a retry",
 		},
+		&cli.IntFlag{
+			Name:  "parallel",
+			Value: 6,
+			Usage: "specify batch job number",
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
 		dscluster := c.String("dscluster-cfg")
+		parallel := c.Int("parallel")
 
 		targetPath := c.Args().First()
 		targetPath, err = homedir.Expand(targetPath)
@@ -100,7 +106,7 @@ var importDatasetCmd = &cli.Command{
 			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
 		}
 
-		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"))
+		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"), parallel)
 	},
 }
 
