@@ -45,6 +45,10 @@ func main() {
 	flag.StringVar(&bootstrapper, "bootstrapper", "", "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
+	var disabledel bool
+	if disableDelete == "true" {
+		disabledel = true
+	}
 
 	ctxbg := context.Background()
 	ctxOption := fx.Provide(func() context.Context {
@@ -65,7 +69,7 @@ func main() {
 	if err != nil {
 		// other nodes get identity and cluster nodes info from bootstrap node
 		if identityIdx > 0 && bootstrapper != "" {
-			cfg, err = initClusterConfig(ctxbg, confpath, bootstrapper)
+			cfg, err = initClusterConfig(ctxbg, confpath, bootstrapper, disabledel)
 			if err != nil {
 				logging.Error(err)
 				return
@@ -202,7 +206,7 @@ func BasicHost(lc fx.Lifecycle, cfg *config.Config) (host.Host, error) {
 	return h, nil
 }
 
-func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string) (cfg *config.Config, err error) {
+func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string, disabledel bool) (cfg *config.Config, err error) {
 	h1, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
 		return
@@ -244,6 +248,7 @@ func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string) (cf
 		Addresses: config.Addresses{
 			Swarm: nodes[identityIdx].Swarm,
 		},
+		DisableDelete: disabledel,
 	}
 	cfgbs, err := json.MarshalIndent(cfg, "", "\t")
 	if err != nil {
