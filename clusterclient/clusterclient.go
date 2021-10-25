@@ -78,7 +78,7 @@ func (d *ClusterClient) Put(k ds.Key, value []byte) error {
 		return xerrors.Errorf("readonly client!!!")
 	}
 	kstr := k.String()
-	logging.Infof("put %s", kstr)
+	//logging.Infof("put %s", kstr)
 	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (d *ClusterClient) Put(k ds.Key, value []byte) error {
 
 func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
 	kstr := k.String()
-	logging.Infof("get %s", kstr)
+	//logging.Infof("get %s", kstr)
 	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
 
 func (d *ClusterClient) Has(k ds.Key) (bool, error) {
 	kstr := k.String()
-	logging.Infof("has %s", kstr)
+	//logging.Infof("has %s", kstr)
 	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return false, err
@@ -108,7 +108,7 @@ func (d *ClusterClient) Has(k ds.Key) (bool, error) {
 
 func (d *ClusterClient) GetSize(k ds.Key) (int, error) {
 	kstr := k.String()
-	logging.Infof("get size %s", kstr)
+	//logging.Infof("get size %s", kstr)
 	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return -1, err
@@ -121,7 +121,7 @@ func (d *ClusterClient) Delete(k ds.Key) error {
 		return xerrors.Errorf("readonly client!!!")
 	}
 	kstr := k.String()
-	logging.Infof("delete %s", kstr)
+	//logging.Infof("delete %s", kstr)
 	client, err := d.nodeByKey(kstr)
 	if err != nil {
 		return err
