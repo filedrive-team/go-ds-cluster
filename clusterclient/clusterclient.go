@@ -215,8 +215,24 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 	}), nil
 }
 
+type batch struct {
+	s ds.Datastore
+}
+
 func (d *ClusterClient) Batch() (ds.Batch, error) {
-	return ds.NewBasicBatch(d), nil
+	return &batch{d}, nil
+}
+
+func (b *batch) Put(key ds.Key, value []byte) error {
+	return b.s.Put(key, value)
+}
+
+func (b *batch) Delete(key ds.Key) error {
+	return b.s.Delete(key)
+}
+
+func (b *batch) Commit() error {
+	return nil
 }
 
 func makeNodeMap(ctx context.Context, host host.Host, cfg *config.Config) (map[string]core.DataNodeClient, error) {

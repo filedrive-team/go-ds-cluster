@@ -20,7 +20,6 @@ import (
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsmount "github.com/ipfs/go-datastore/mount"
-	dss "github.com/ipfs/go-datastore/sync"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
@@ -145,7 +144,7 @@ var addCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		// cidbuilder
@@ -207,7 +206,7 @@ var statCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		dagNode, err := dagServ.Get(ctx, tcid)
@@ -267,7 +266,7 @@ var getCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		dagNode, err := dagServ.Get(ctx, tcid)
