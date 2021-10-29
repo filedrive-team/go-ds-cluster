@@ -20,7 +20,6 @@ import (
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsmount "github.com/ipfs/go-datastore/mount"
-	dss "github.com/ipfs/go-datastore/sync"
 	bstore "github.com/ipfs/go-ipfs-blockstore"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
@@ -86,10 +85,16 @@ var importDatasetCmd = &cli.Command{
 			Value: 1,
 			Usage: "sleep time before a retry",
 		},
+		&cli.IntFlag{
+			Name:  "parallel",
+			Value: 6,
+			Usage: "specify batch job number",
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
 		dscluster := c.String("dscluster-cfg")
+		parallel := c.Int("parallel")
 
 		targetPath := c.Args().First()
 		targetPath, err = homedir.Expand(targetPath)
@@ -100,7 +105,7 @@ var importDatasetCmd = &cli.Command{
 			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
 		}
 
-		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"))
+		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"), parallel)
 	},
 }
 
@@ -139,7 +144,7 @@ var addCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		// cidbuilder
@@ -201,7 +206,7 @@ var statCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		dagNode, err := dagServ.Get(ctx, tcid)
@@ -261,7 +266,7 @@ var getCmd = &cli.Command{
 				Datastore: ds,
 			},
 		})
-		bs2 := bstore.NewBlockstore(dss.MutexWrap(ds))
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
 
 		dagNode, err := dagServ.Get(ctx, tcid)
