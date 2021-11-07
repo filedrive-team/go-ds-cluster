@@ -215,6 +215,16 @@ func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
 	}), nil
 }
 
+func (d *ClusterClient) HashSlots(k ds.Key) (*shard.Node, error) {
+	kstr := k.String()
+	//logging.Infof("get %s", kstr)
+	sn, err := d.sm.NodeByKey(kstr)
+	if err != nil {
+		return nil, err
+	}
+	return sn, nil
+}
+
 type batch struct {
 	s ds.Datastore
 }

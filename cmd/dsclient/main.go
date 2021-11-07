@@ -46,6 +46,7 @@ func main() {
 		statCmd,
 		getCmd,
 		initCmd,
+		hashslotCmd,
 	}
 
 	app := &cli.App{
@@ -168,6 +169,51 @@ var addCmd = &cli.Command{
 	},
 }
 
+var hashslotCmd = &cli.Command{
+	Name:  "hashslot",
+	Usage: "",
+	Action: func(c *cli.Context) error {
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
+		target := c.Args().First()
+		tcid, err := cid.Decode(target)
+		if err != nil {
+			return err
+		}
+
+		k := dshelp.MultihashToDsKey(tcid.Hash())
+		fmt.Printf("ds key: %s\n", k)
+		ctx := context.Background()
+
+		ds, err := clusterclient.NewClusterClient(ctx, cfg)
+		if err != nil {
+			return err
+		}
+		n, err := ds.HashSlots(k)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id: %s\n", n.ID)
+		fmt.Printf("slots start: %d\n", n.Slots.Start)
+		fmt.Printf("slots end: %d\n", n.Slots.End)
+		fmt.Printf("crc8code: %d\n", utils.CRC8code(k.String()))
+		return nil
+	},
+}
+
 var statCmd = &cli.Command{
 	Name:  "stat",
 	Usage: "",
@@ -193,7 +239,7 @@ var statCmd = &cli.Command{
 			return err
 		}
 		k := dshelp.MultihashToDsKey(tcid.Hash())
-		logging.Infof("ds key: %s", k)
+		fmt.Printf("ds key: %s\n", k)
 		ctx := context.Background()
 		var ds ds.Datastore
 		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
