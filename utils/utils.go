@@ -80,5 +80,5 @@ func TailFileNode(ctx context.Context, tcid cid.Cid, dagServ format.DAGService, 
 		return
 	}
 	lastLink := links[len(links)-1]
-	HeadFileNode(ctx, lastLink.Cid, dagServ, filepath.Join(p, lastLink.Name), cb)
+	TailFileNode(ctx, lastLink.Cid, dagServ, filepath.Join(p, lastLink.Name), cb)
 }
