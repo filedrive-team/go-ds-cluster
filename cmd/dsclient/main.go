@@ -47,6 +47,7 @@ func main() {
 		getCmd,
 		initCmd,
 		hashslotCmd,
+		boundCmd,
 	}
 
 	app := &cli.App{
@@ -210,6 +211,64 @@ var hashslotCmd = &cli.Command{
 		fmt.Printf("slots start: %d\n", n.Slots.Start)
 		fmt.Printf("slots end: %d\n", n.Slots.End)
 		fmt.Printf("crc8code: %d\n", utils.CRC8code(k.String()))
+		return nil
+	},
+}
+
+var boundCmd = &cli.Command{
+	Name:  "bound",
+	Usage: "",
+	Action: func(c *cli.Context) error {
+		ctx := context.Background()
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
+		var ds ds.Datastore
+		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+		ds = dsmount.New([]dsmount.Mount{
+			{
+				Prefix:    bstore.BlockPrefix,
+				Datastore: ds,
+			},
+		})
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
+		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
+
+		target := c.Args().First()
+		tcid, err := cid.Decode(target)
+		if err != nil {
+			return err
+		}
+		utils.HeadFileNode(ctx, tcid, dagServ, "", func(path string, cid cid.Cid, err error) {
+			if err != nil {
+				logging.Error(err)
+				return
+			}
+			fmt.Printf("head: %s,%s\n", path, cid)
+		})
+		utils.TailFileNode(ctx, tcid, dagServ, "", func(path string, cid cid.Cid, err error) {
+			if err != nil {
+				logging.Error(err)
+				return
+			}
+			fmt.Printf("tail: %s,%s\n", path, cid)
+		})
+
 		return nil
 	},
 }
