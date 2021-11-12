@@ -188,8 +188,8 @@ github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4 h1:Y
 github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4/go.mod h1:pqTiPHobNkOVM5thSRsHYjyQfq7O5QSCMhvuu9JoDlg=
 github.com/filedrive-team/filehelper v0.0.2/go.mod h1:nwlxmeyGqIt2zl2XqL59ySUybmutjmEqFOYEWpfNzVg=
 github.com/filedrive-team/filehelper v0.0.4/go.mod h1:TpZS08Qcbfzc7oF07juG8RsCrg2F88cW+A+EMPP+6AA=
-github.com/filedrive-team/filehelper v0.0.8-0.20211111104106-175aa71d8138 h1:OOuNonsL5L4KrB2a1NrpAdeL+gIlncLm5J4+YMXLDKU=
-github.com/filedrive-team/filehelper v0.0.8-0.20211111104106-175aa71d8138/go.mod h1:AEis9leNL2wiBOpDJrWCkw8j/MWeb8E+SJq9CQjh3Ds=
+github.com/filedrive-team/filehelper v0.0.8 h1:4loWos0vU9clJwWhMzVO5AzqB4uQr+RJtrZL8K+S4wI=
+github.com/filedrive-team/filehelper v0.0.8/go.mod h1:AEis9leNL2wiBOpDJrWCkw8j/MWeb8E+SJq9CQjh3Ds=
 github.com/filedrive-team/go-ds-cluster v0.0.2/go.mod h1:YT9FcORCaA7tAInFWIzebsIIvL+JYeVdREyMUloatkg=
 github.com/filedrive-team/go-ds-cluster v0.0.4/go.mod h1:a3eMdo+NPQPr3tsAplwCMx6cj5kYxAh0jmkzGpsNGV0=
 github.com/filedrive-team/go-ds-cluster v0.0.6-0.20211029051144-10c8cf554437/go.mod h1:nDKIwzAiGHmdkFca+z97LteDwoL31rC7sd6bLL4OTZ0=
