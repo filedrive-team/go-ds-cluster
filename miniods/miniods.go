@@ -68,6 +68,7 @@ func (m *MinioDS) Get(k ds.Key) ([]byte, error) {
 		logging.Error(err)
 		return nil, err
 	}
+	defer res.Close()
 	v, err := ioutil.ReadAll(res)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,12 @@ func (m *MinioDS) Get(k ds.Key) ([]byte, error) {
 }
 
 func (m *MinioDS) Has(k ds.Key) (bool, error) {
-	return false, nil
+	fname := filepath.Join(m.cfg.Root, k.String())
+	_, err := m.client.StatObjectWithContext(m.ctx, m.cfg.Bucket, fname, minio.StatObjectOptions{})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (m *MinioDS) GetSize(k ds.Key) (int, error) {
@@ -89,7 +95,8 @@ func (m *MinioDS) GetSize(k ds.Key) (int, error) {
 }
 
 func (m *MinioDS) Delete(k ds.Key) error {
-	return nil
+	fname := filepath.Join(m.cfg.Root, k.String())
+	return m.client.RemoveObject(m.cfg.Bucket, fname)
 }
 
 func (m *MinioDS) Sync(ds.Key) error {
