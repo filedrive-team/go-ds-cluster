@@ -29,7 +29,11 @@ func NewMongoDS(ctx context.Context, cfg *Config) (*MongoDS, error) {
 }
 
 func (m *MongoDS) Put(k ds.Key, value []byte) error {
-	return m.dbclient.put(m.ctx, k, value)
+	err := m.dbclient.put(m.ctx, k, value)
+	if mongo.IsDuplicateKeyError(err) {
+		return nil
+	}
+	return err
 }
 
 func (m *MongoDS) Get(k ds.Key) ([]byte, error) {

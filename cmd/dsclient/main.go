@@ -46,6 +46,8 @@ func main() {
 		statCmd,
 		getCmd,
 		initCmd,
+		hashslotCmd,
+		boundCmd,
 	}
 
 	app := &cli.App{
@@ -90,11 +92,18 @@ var importDatasetCmd = &cli.Command{
 			Value: 6,
 			Usage: "specify batch job number",
 		},
+		&cli.IntFlag{
+			Name:    "batch-read-num",
+			Aliases: []string{"br"},
+			Value:   32,
+			Usage:   "specify batch read num",
+		},
 	},
 	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
 		dscluster := c.String("dscluster-cfg")
 		parallel := c.Int("parallel")
+		batchReadNum := c.Int("batch-read-num")
 
 		targetPath := c.Args().First()
 		targetPath, err = homedir.Expand(targetPath)
@@ -105,7 +114,7 @@ var importDatasetCmd = &cli.Command{
 			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
 		}
 
-		return dataset.Import(ctx, targetPath, dscluster, c.Int("retry"), c.Int("retry-wait"), parallel)
+		return dataset.Import(ctx, targetPath, dscluster, parallel, batchReadNum)
 	},
 }
 
@@ -168,6 +177,109 @@ var addCmd = &cli.Command{
 	},
 }
 
+var hashslotCmd = &cli.Command{
+	Name:  "hashslot",
+	Usage: "",
+	Action: func(c *cli.Context) error {
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
+		target := c.Args().First()
+		tcid, err := cid.Decode(target)
+		if err != nil {
+			return err
+		}
+
+		k := dshelp.MultihashToDsKey(tcid.Hash())
+		fmt.Printf("ds key: %s\n", k)
+		ctx := context.Background()
+
+		ds, err := clusterclient.NewClusterClient(ctx, cfg)
+		if err != nil {
+			return err
+		}
+		n, err := ds.HashSlots(k)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("id: %s\n", n.ID)
+		fmt.Printf("slots start: %d\n", n.Slots.Start)
+		fmt.Printf("slots end: %d\n", n.Slots.End)
+		fmt.Printf("crc8code: %d\n", utils.CRC8code(k.String()))
+		return nil
+	},
+}
+
+var boundCmd = &cli.Command{
+	Name:  "bound",
+	Usage: "",
+	Action: func(c *cli.Context) error {
+		ctx := context.Background()
+		confPath := c.String("conf")
+		confPath, err := homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(confPath, 0755)
+		if err != nil {
+			return err
+		}
+
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+
+		var ds ds.Datastore
+		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
+		if err != nil {
+			return err
+		}
+		ds = dsmount.New([]dsmount.Mount{
+			{
+				Prefix:    bstore.BlockPrefix,
+				Datastore: ds,
+			},
+		})
+		bs2 := bstore.NewBlockstore(ds.(*dsmount.Datastore))
+		dagServ := merkledag.NewDAGService(blockservice.New(bs2, offline.Exchange(bs2)))
+
+		target := c.Args().First()
+		tcid, err := cid.Decode(target)
+		if err != nil {
+			return err
+		}
+		utils.HeadFileNode(ctx, tcid, dagServ, "", func(path string, cid cid.Cid, err error) {
+			if err != nil {
+				logging.Error(err)
+				return
+			}
+			fmt.Printf("head: %s,%s\n", path, cid)
+		})
+		utils.TailFileNode(ctx, tcid, dagServ, "", func(path string, cid cid.Cid, err error) {
+			if err != nil {
+				logging.Error(err)
+				return
+			}
+			fmt.Printf("tail: %s,%s\n", path, cid)
+		})
+
+		return nil
+	},
+}
+
 var statCmd = &cli.Command{
 	Name:  "stat",
 	Usage: "",
@@ -193,7 +305,7 @@ var statCmd = &cli.Command{
 			return err
 		}
 		k := dshelp.MultihashToDsKey(tcid.Hash())
-		logging.Infof("ds key: %s", k)
+		fmt.Printf("ds key: %s\n", k)
 		ctx := context.Background()
 		var ds ds.Datastore
 		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)

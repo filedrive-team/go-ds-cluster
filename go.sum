@@ -187,10 +187,12 @@ github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL
 github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4 h1:YmE80qPn5K0txSqxnRNiCRAWyXI1LTO//I4c4H0QwbM=
 github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4/go.mod h1:pqTiPHobNkOVM5thSRsHYjyQfq7O5QSCMhvuu9JoDlg=
 github.com/filedrive-team/filehelper v0.0.2/go.mod h1:nwlxmeyGqIt2zl2XqL59ySUybmutjmEqFOYEWpfNzVg=
-github.com/filedrive-team/filehelper v0.0.4 h1:Pt1QZhI2UmrnwXGFXNU9u0BgrUvesz116wH23leGYqU=
 github.com/filedrive-team/filehelper v0.0.4/go.mod h1:TpZS08Qcbfzc7oF07juG8RsCrg2F88cW+A+EMPP+6AA=
+github.com/filedrive-team/filehelper v0.0.9 h1:POixwYdNdbbdEj3ZXlWV6KK1Z1jKhjyRaNu9R4AfFf8=
+github.com/filedrive-team/filehelper v0.0.9/go.mod h1:AEis9leNL2wiBOpDJrWCkw8j/MWeb8E+SJq9CQjh3Ds=
 github.com/filedrive-team/go-ds-cluster v0.0.2/go.mod h1:YT9FcORCaA7tAInFWIzebsIIvL+JYeVdREyMUloatkg=
 github.com/filedrive-team/go-ds-cluster v0.0.4/go.mod h1:a3eMdo+NPQPr3tsAplwCMx6cj5kYxAh0jmkzGpsNGV0=
+github.com/filedrive-team/go-ds-cluster v0.0.6-0.20211029051144-10c8cf554437/go.mod h1:nDKIwzAiGHmdkFca+z97LteDwoL31rC7sd6bLL4OTZ0=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/flynn/noise v0.0.0-20180327030543-2492fe189ae6/go.mod h1:1i71OnUq3iUe1ma7Lr6yG6/rjvM3emb6yoL7xLFzcVQ=
 github.com/flynn/noise v1.0.0 h1:DlTHqmzmvcEiKj+4RYo/imoswx/4r6iBlCMfVtrMXpQ=
@@ -1251,6 +1253,10 @@ github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5I
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/shurcooL/users v0.0.0-20180125191416-49c67e49c537/go.mod h1:QJTqeLYEDaXHZDBsXlPCDqdhQuJkuw4NOtaxYe3xii4=
 github.com/shurcooL/webdavfs v0.0.0-20170829043945-18c3829fa133/go.mod h1:hKmq5kWdCj2z2KEozexVbfEZIWiTjhE0+UjmZgPqehw=
+github.com/sigurn/crc8 v0.0.0-20160107002456-e55481d6f45c h1:hk0Jigjfq59yDMgd6bzi22Das5tyxU0CtOkh7a9io84=
+github.com/sigurn/crc8 v0.0.0-20160107002456-e55481d6f45c/go.mod h1:cyrWuItcOVIGX6fBZ/G00z4ykprWM7hH58fSavNkjRg=
+github.com/sigurn/utils v0.0.0-20190728110027-e1fefb11a144 h1:ccb8W1+mYuZvlpn/mJUMAbsFHTMCpcJBS78AsBQxNcY=
+github.com/sigurn/utils v0.0.0-20190728110027-e1fefb11a144/go.mod h1:VRI4lXkrUH5Cygl6mbG1BRUfMMoT2o8BkrtBDUAm+GU=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
