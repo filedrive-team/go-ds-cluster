@@ -1,7 +1,9 @@
 package mongods
 
 import (
+	"bytes"
 	"context"
+	"path/filepath"
 
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
@@ -25,6 +27,7 @@ type Config struct {
 type MinioDS struct {
 	ctx    context.Context
 	client *minio.Client
+	cfg    *Config
 }
 
 func NewMinioDS(ctx context.Context, cfg *Config) (*MinioDS, error) {
@@ -32,14 +35,29 @@ func NewMinioDS(ctx context.Context, cfg *Config) (*MinioDS, error) {
 	if err != nil {
 		return nil, err
 	}
+	// check if bucket exists
+	exists, err := client.BucketExists(cfg.Bucket)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		// create bucket
+		if err := client.MakeBucket(cfg.Bucket, cfg.Region); err != nil {
+			return nil, err
+		}
+	}
 	return &MinioDS{
 		ctx:    ctx,
 		client: client,
+		cfg:    cfg,
 	}, nil
 }
 
 func (m *MinioDS) Put(k ds.Key, value []byte) error {
-	return nil
+	fname := filepath.Join(m.cfg.Root, k.String())
+	fsize := int64(len(value))
+	_, err := m.client.PutObjectWithContext(m.ctx, m.cfg.Bucket, fname, bytes.NewReader(value), fsize, minio.PutObjectOptions{})
+	return err
 }
 
 func (m *MinioDS) Get(k ds.Key) ([]byte, error) {
