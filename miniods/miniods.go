@@ -3,6 +3,7 @@ package mongods
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"path/filepath"
 
 	ds "github.com/ipfs/go-datastore"
@@ -61,7 +62,17 @@ func (m *MinioDS) Put(k ds.Key, value []byte) error {
 }
 
 func (m *MinioDS) Get(k ds.Key) ([]byte, error) {
-	return nil, nil
+	fname := filepath.Join(m.cfg.Root, k.String())
+	res, err := m.client.GetObjectWithContext(m.ctx, m.cfg.Bucket, fname, minio.GetObjectOptions{})
+	if err != nil {
+		logging.Error(err)
+		return nil, err
+	}
+	v, err := ioutil.ReadAll(res)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 func (m *MinioDS) Has(k ds.Key) (bool, error) {
@@ -69,7 +80,12 @@ func (m *MinioDS) Has(k ds.Key) (bool, error) {
 }
 
 func (m *MinioDS) GetSize(k ds.Key) (int, error) {
-	return 0, nil
+	fname := filepath.Join(m.cfg.Root, k.String())
+	info, err := m.client.StatObjectWithContext(m.ctx, m.cfg.Bucket, fname, minio.StatObjectOptions{})
+	if err != nil {
+		return -1, err
+	}
+	return int(info.Size), nil
 }
 
 func (m *MinioDS) Delete(k ds.Key) error {
