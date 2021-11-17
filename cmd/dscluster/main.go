@@ -8,10 +8,13 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
+	"github.com/filedrive-team/go-ds-cluster/miniods"
 	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/share"
@@ -31,6 +34,7 @@ import (
 var logging = log.Logger("dscluster")
 var confpath string
 var mongodb string
+var minio string
 var loglevel string
 var disableDelete string
 var identityIdx int
@@ -39,6 +43,7 @@ var bootstrapper string
 func main() {
 	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
+	flag.StringVar(&minio, "minio", "", "")
 	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.IntVar(&identityIdx, "identity", 0, "get node identity from bootstrap node")
@@ -117,6 +122,27 @@ func main() {
 				},
 			})
 			return monds, nil
+		})
+	} else if minio != "" {
+		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+			cfgpath := minio
+			if !strings.HasPrefix(cfgpath, "/") {
+				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+			}
+			miniocfg, err := miniods.LoadConfig(cfgpath)
+			if err != nil {
+				return nil, err
+			}
+			mds, err := miniods.NewMinioDS(ctx, miniocfg)
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return mds.Close()
+				},
+			})
+			return mds, nil
 		})
 	} else {
 		dsOption = fx.Provide(FlatFS)

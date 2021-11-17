@@ -3,6 +3,7 @@ package miniods
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 
@@ -154,4 +155,17 @@ func (m *MinioDS) Query(q dsq.Query) (dsq.Results, error) {
 		},
 		Next: nextValue,
 	}), nil
+}
+
+func LoadConfig(path string) (*Config, error) {
+	cfg := new(Config)
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
