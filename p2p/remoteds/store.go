@@ -12,6 +12,7 @@ var logging = log.Logger("dscluster/p2p/remoteds")
 
 const (
 	PROTOCOL_V1 = "/cluster/remoteds/0.0.1"
+	PREFIX      = "remoteds"
 )
 
 func ReadRequestMsg(s network.Stream, msg *RequestMessage, timeout int) error {
