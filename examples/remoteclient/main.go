@@ -16,8 +16,8 @@ func main() {
 		AccessToken: "",
 		Bucket:      "test02",
 		Timeout:     2,
-		SwarmKey:    "/Users/lifeng/.filejoy/swarm.key",
-		Target:      "/ip4/127.0.0.1/tcp/17073/p2p/12D3KooWRLrrvysm9wRSeXoHyyaxh5SDQ1Q1asgYQufrBbN46JwC",
+		SwarmKey:    "",
+		Target:      "/ip4/47.113.123.79/tcp/6001/p2p/12D3KooWGET3iPPu5PKAuDsuYURrzaD7rCuvgVy3L6hE2tZ2K3Pb",
 	})
 	if err != nil {
 		panic(err)
