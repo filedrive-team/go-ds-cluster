@@ -3,6 +3,7 @@ package remoteclient
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -10,11 +11,13 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/core"
 	"github.com/filedrive-team/go-ds-cluster/p2p/remoteds"
 	"github.com/ipfs/go-blockservice"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	format "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
+	ufsio "github.com/ipfs/go-unixfs/io"
 )
 
 type MetaInfo struct {
@@ -50,6 +53,42 @@ func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
 		rdc:     rc,
 	}, nil
 
+}
+
+func (cl *Client) Get(objname string) (io.ReadCloser, error) {
+	meta, err := cl.FileInfo(objname)
+	if err != nil {
+		return nil, err
+	}
+	return cl.GetByCid(meta.Cid)
+}
+
+func (cl *Client) GetByCid(cidstr string) (io.ReadCloser, error) {
+	cid, err := cid.Decode(cidstr)
+	if err != nil {
+		return nil, err
+	}
+	dagNode, err := cl.dagserv.Get(cl.ctx, cid)
+	if err != nil {
+		return nil, err
+	}
+	fdr, err := ufsio.NewDagReader(cl.ctx, dagNode, cl.dagserv)
+	if err != nil {
+		return nil, err
+	}
+	return fdr, nil
+}
+
+func (cl *Client) FileInfo(objname string) (*MetaInfo, error) {
+	b, err := cl.rdc.FileInfo(remotedsKey(objname))
+	if err != nil {
+		return nil, err
+	}
+	res := new(MetaInfo)
+	if err := json.Unmarshal(b, res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (cl *Client) Add(p string, objname string) (*MetaInfo, error) {
