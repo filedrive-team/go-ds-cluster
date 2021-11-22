@@ -82,8 +82,11 @@ func (sv *server) handleStream(s network.Stream) {
 		sv.authFailedMag(s)
 		return
 	}
-	prefix := filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
-	reqMsg.Key = filepath.Join(prefix, reqMsg.Key)
+	var prefix string
+	if reqMsg.Action == ActTouchFile || reqMsg.Action == ActFileInfo || reqMsg.Action == ActDeleteFile || reqMsg.Action == ActListFiles {
+		prefix := filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
+		reqMsg.Key = filepath.Join(prefix, reqMsg.Key)
+	}
 
 	logging.Infof("req action %v", reqMsg.Action)
 	switch reqMsg.Action {
