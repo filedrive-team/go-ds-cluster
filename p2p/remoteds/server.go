@@ -84,7 +84,7 @@ func (sv *server) handleStream(s network.Stream) {
 	}
 	var prefix string
 	if reqMsg.Action == ActTouchFile || reqMsg.Action == ActFileInfo || reqMsg.Action == ActDeleteFile || reqMsg.Action == ActListFiles {
-		prefix := filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
+		prefix = filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
 		reqMsg.Key = filepath.Join(prefix, reqMsg.Key)
 	}
 
@@ -311,8 +311,6 @@ func (sv *server) listFiles(s network.Stream, req *RequestMessage, prefix string
 			}
 			return
 		}
-		logging.Info(result.Key)
-		logging.Info(prefix)
 		res.Key = strings.TrimPrefix(result.Key, prefix)
 		res.Value = result.Value
 		res.Size = int64(result.Size)
