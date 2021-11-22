@@ -101,7 +101,7 @@ func (sv *server) handleStream(s network.Stream) {
 	case ActDelete:
 		sv.delete(s, reqMsg)
 	case ActQuery:
-		sv.query(s, reqMsg, prefix)
+		sv.query(s, reqMsg)
 	case ActTouchFile:
 		sv.touchFile(s, reqMsg)
 	case ActFileInfo:
@@ -257,7 +257,7 @@ func (sv *server) deleteFile(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) query(s network.Stream, req *RequestMessage, prefix string) {
+func (sv *server) query(s network.Stream, req *RequestMessage) {
 	qresult, err := sv.ds.Query(DSQuery(req.Query))
 	if err != nil {
 		res := &QueryResultEntry{}
@@ -279,7 +279,7 @@ func (sv *server) query(s network.Stream, req *RequestMessage, prefix string) {
 			}
 			return
 		}
-		res.Key = strings.TrimPrefix(result.Key, prefix)
+		res.Key = result.Key
 		res.Value = result.Value
 		res.Size = int64(result.Size)
 		if err := WriteQueryResultEntry(s, res, sv.timeout); err != nil {
@@ -311,6 +311,8 @@ func (sv *server) listFiles(s network.Stream, req *RequestMessage, prefix string
 			}
 			return
 		}
+		logging.Info(result.Key)
+		logging.Info(prefix)
 		res.Key = strings.TrimPrefix(result.Key, prefix)
 		res.Value = result.Value
 		res.Size = int64(result.Size)
