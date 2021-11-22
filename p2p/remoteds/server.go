@@ -2,6 +2,7 @@ package remoteds
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -25,9 +26,10 @@ type server struct {
 	disableDelete bool
 	timeout       int
 	isValid       func(token string) bool
+	userPrefix    func(token string) string
 }
 
-func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds ds.Datastore, disableDelete bool, timeout int, verify func(token string) bool) core.DataNodeServer {
+func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds ds.Datastore, disableDelete bool, timeout int, verify func(token string) bool, userPrefix func(token string) string) core.DataNodeServer {
 	return &server{
 		ctx:           ctx,
 		host:          h,
@@ -37,6 +39,7 @@ func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds d
 		disableDelete: disableDelete,
 		timeout:       timeout,
 		isValid:       verify,
+		userPrefix:    userPrefix,
 	}
 }
 
@@ -79,6 +82,8 @@ func (sv *server) handleStream(s network.Stream) {
 		sv.authFailedMag(s)
 		return
 	}
+	prefix := filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
+	reqMsg.Key = filepath.Join(prefix, reqMsg.Key)
 
 	logging.Infof("req action %v", reqMsg.Action)
 	switch reqMsg.Action {
@@ -93,7 +98,7 @@ func (sv *server) handleStream(s network.Stream) {
 	case ActDelete:
 		sv.delete(s, reqMsg)
 	case ActQuery:
-		sv.query(s, reqMsg)
+		sv.query(s, reqMsg, prefix)
 	case ActTouchFile:
 		sv.touchFile(s, reqMsg)
 	case ActFileInfo:
@@ -101,7 +106,7 @@ func (sv *server) handleStream(s network.Stream) {
 	case ActDeleteFile:
 		sv.deleteFile(s, reqMsg)
 	case ActListFiles:
-		sv.listFiles(s, reqMsg)
+		sv.listFiles(s, reqMsg, prefix)
 	default:
 		logging.Warnf("unhandled action: %v", reqMsg.Action)
 	}
@@ -249,7 +254,7 @@ func (sv *server) deleteFile(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) query(s network.Stream, req *RequestMessage) {
+func (sv *server) query(s network.Stream, req *RequestMessage, prefix string) {
 	qresult, err := sv.ds.Query(DSQuery(req.Query))
 	if err != nil {
 		res := &QueryResultEntry{}
@@ -271,7 +276,7 @@ func (sv *server) query(s network.Stream, req *RequestMessage) {
 			}
 			return
 		}
-		res.Key = result.Key
+		res.Key = strings.TrimPrefix(result.Key, prefix)
 		res.Value = result.Value
 		res.Size = int64(result.Size)
 		if err := WriteQueryResultEntry(s, res, sv.timeout); err != nil {
@@ -281,7 +286,7 @@ func (sv *server) query(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) listFiles(s network.Stream, req *RequestMessage) {
+func (sv *server) listFiles(s network.Stream, req *RequestMessage, prefix string) {
 	qresult, err := sv.fds.Query(dsq.Query{Prefix: req.Key})
 	if err != nil {
 		res := &QueryResultEntry{}
@@ -303,7 +308,7 @@ func (sv *server) listFiles(s network.Stream, req *RequestMessage) {
 			}
 			return
 		}
-		res.Key = strings.TrimPrefix(result.Key, "/")
+		res.Key = strings.TrimPrefix(result.Key, prefix)
 		res.Value = result.Value
 		res.Size = int64(result.Size)
 		if err := WriteQueryResultEntry(s, res, sv.timeout); err != nil {

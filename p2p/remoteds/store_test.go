@@ -40,8 +40,9 @@ func TestDataNode(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 	verify := func(token string) bool { return true }
+	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 180, verify)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 180, verify, userPrefix)
 	defer server.Close()
 	server.Serve()
 
@@ -150,8 +151,9 @@ func TestDataNodeQuery(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 	verify := func(token string) bool { return true }
+	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify, userPrefix)
 	defer server.Close()
 	server.Serve()
 
@@ -176,9 +178,11 @@ func TestDataNodeQuery(t *testing.T) {
 	if len(ents) != len(tdata) {
 		t.Fatalf("count of data not match, expected count: %d, got: %d", len(tdata), len(ents))
 	}
+	t.Log(ents)
 	for _, d := range tdata {
 		ent, ok := findEntry(ds.NewKey(d.K), ents)
 		if !ok {
+			t.Log(d)
 			t.Fatal("should found data from query result")
 		}
 		if !bytes.Equal(ent.Value, d.V) {
@@ -213,8 +217,9 @@ func TestListFiles(t *testing.T) {
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
 	verify := func(token string) bool { return true }
+	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify, userPrefix)
 	defer server.Close()
 	server.Serve()
 
@@ -247,7 +252,7 @@ func TestListFiles(t *testing.T) {
 
 func findData(k string, ents []Pair) (Pair, bool) {
 	for _, ent := range ents {
-		if ent.K == k {
+		if ds.NewKey(ent.K).String() == k {
 			return ent, true
 		}
 	}

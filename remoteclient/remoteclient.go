@@ -9,10 +9,8 @@ import (
 
 	"github.com/filedrive-team/filehelper/importer"
 	"github.com/filedrive-team/go-ds-cluster/core"
-	"github.com/filedrive-team/go-ds-cluster/p2p/remoteds"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
-	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	format "github.com/ipfs/go-ipld-format"
@@ -31,6 +29,7 @@ type Client struct {
 	ctx     context.Context
 	dagserv format.DAGService
 	rdc     core.RemoteDataNodeClient
+	cfg     *Config
 }
 
 func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
@@ -51,6 +50,7 @@ func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
 		ctx:     ctx,
 		dagserv: dagServ,
 		rdc:     rc,
+		cfg:     cfg,
 	}, nil
 
 }
@@ -80,7 +80,7 @@ func (cl *Client) GetByCid(cidstr string) (io.ReadCloser, error) {
 }
 
 func (cl *Client) FileInfo(objname string) (*MetaInfo, error) {
-	b, err := cl.rdc.FileInfo(remotedsKey(objname))
+	b, err := cl.rdc.FileInfo(filepath.Join(cl.cfg.Bucket, objname))
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,7 @@ func (cl *Client) Add(p string, objname string) (*MetaInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	objname = filepath.Join(cl.cfg.Bucket, objname)
 	meta := &MetaInfo{
 		Path: objname,
 		Name: filepath.Base(p),
@@ -119,14 +120,10 @@ func (cl *Client) Add(p string, objname string) (*MetaInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = cl.rdc.TouchFile(remotedsKey(objname), metabytes)
+	err = cl.rdc.TouchFile(objname, metabytes)
 	if err != nil {
 		return nil, err
 	}
 
 	return meta, nil
-}
-
-func remotedsKey(objname string) string {
-	return datastore.NewKey(remoteds.PREFIX).Child(datastore.NewKey(objname)).String()
 }
