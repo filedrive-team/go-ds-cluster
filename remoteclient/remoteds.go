@@ -22,7 +22,7 @@ type RemoteStore struct {
 }
 
 func NewRemoteStore(ctx context.Context, h host.Host, target string, timeout int, token string) (*RemoteStore, error) {
-	rc, err := MakeRemoteDataNodeCleint(ctx, h, target, timeout, token)
+	rc, err := MakeRemoteDataNodeClient(ctx, h, target, timeout, token)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (b *batch) Commit() error {
 	return nil
 }
 
-func MakeRemoteDataNodeCleint(ctx context.Context, host host.Host, target string, timeout int, token string) (core.RemoteDataNodeClient, error) {
+func MakeRemoteDataNodeClient(ctx context.Context, host host.Host, target string, timeout int, token string) (core.RemoteDataNodeClient, error) {
 	pinfo, err := peer.AddrInfoFromString(target)
 	if err != nil {
 		return nil, err

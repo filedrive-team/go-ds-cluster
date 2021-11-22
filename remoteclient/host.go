@@ -6,6 +6,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 )
 
-func hostForRemoteClient(cfg *Config) (host.Host, error) {
+func HostForRemoteClient(cfg *Config) (host.Host, error) {
 	return p2p.MakeHost(utils.RandPort(), cfg.SwarmKey)
 }

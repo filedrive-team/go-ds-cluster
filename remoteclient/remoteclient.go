@@ -33,11 +33,11 @@ type Client struct {
 }
 
 func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
-	h, err := hostForRemoteClient(cfg)
+	h, err := HostForRemoteClient(cfg)
 	if err != nil {
 		return nil, err
 	}
-	rc, err := MakeRemoteDataNodeCleint(ctx, h, cfg.Target, cfg.Timeout, cfg.AccessToken)
+	rc, err := MakeRemoteDataNodeClient(ctx, h, cfg.Target, cfg.Timeout, cfg.AccessToken)
 	if err != nil {
 		return nil, err
 	}
