@@ -92,10 +92,6 @@ func (cl *Client) FileInfo(objname string) (*MetaInfo, error) {
 }
 
 func (cl *Client) Add(p string, objname string) (*MetaInfo, error) {
-	cidBuilder, err := merkledag.PrefixForCidVersion(0)
-	if err != nil {
-		return nil, err
-	}
 	finfo, err := os.Stat(p)
 	if err != nil {
 		return nil, err
@@ -105,14 +101,40 @@ func (cl *Client) Add(p string, objname string) (*MetaInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	ndcid, err := importer.BalanceNode(cl.ctx, f, fsize, cl.dagserv, cidBuilder, 10)
+	defer f.Close()
+
+	objname = filepath.Join(cl.cfg.Bucket, objname)
+	meta, err := cl.AddReader(f, fsize, filepath.Base(p), objname)
+	if err != nil {
+		return nil, err
+	}
+
+	metabytes, err := json.Marshal(meta)
+	if err != nil {
+		return nil, err
+	}
+	err = cl.rdc.TouchFile(objname, metabytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return meta, nil
+}
+
+func (cl *Client) AddReader(r io.Reader, fsize int64, fname string, objname string) (*MetaInfo, error) {
+	cidBuilder, err := merkledag.PrefixForCidVersion(0)
+	if err != nil {
+		return nil, err
+	}
+
+	ndcid, err := importer.BalanceNode(cl.ctx, r, fsize, cl.dagserv, cidBuilder, 10)
 	if err != nil {
 		return nil, err
 	}
 	objname = filepath.Join(cl.cfg.Bucket, objname)
 	meta := &MetaInfo{
 		Path: objname,
-		Name: filepath.Base(p),
+		Name: fname,
 		Size: fsize,
 		Cid:  ndcid.String(),
 	}
