@@ -26,6 +26,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.4.0
 	github.com/sigurn/crc8 v0.0.0-20160107002456-e55481d6f45c
 	github.com/sigurn/utils v0.0.0-20190728110027-e1fefb11a144 // indirect
+	github.com/textileio/go-ds-badger3 v0.0.0-20210324034212-7b7fb3be3d1c
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210713220151-be142a5ae1a8
 	go.mongodb.org/mongo-driver v1.7.2
