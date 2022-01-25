@@ -28,6 +28,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
+	badgerds "github.com/textileio/go-ds-badger3"
 	"go.uber.org/fx"
 )
 
@@ -35,6 +36,7 @@ var logging = log.Logger("dscluster")
 var confpath string
 var mongodb string
 var minio string
+var useBadger bool
 var loglevel string
 var disableDelete string
 var identityIdx int
@@ -48,6 +50,7 @@ func main() {
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.IntVar(&identityIdx, "identity", 0, "get node identity from bootstrap node")
 	flag.StringVar(&bootstrapper, "bootstrapper", "", "")
+	flag.BoolVar(&useBadger, "badger", false, "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
 	var disabledel bool
@@ -144,6 +147,8 @@ func main() {
 			})
 			return mds, nil
 		})
+	} else if useBadger {
+		dsOption = fx.Provide(BadgerDS)
 	} else {
 		dsOption = fx.Provide(FlatFS)
 	}
@@ -202,6 +207,12 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg
 			return nil
 		},
 	})
+}
+
+func BadgerDS(cfg *config.Config) (ds.Datastore, error) {
+	p := cfg.ConfPath + "/blocks"
+	opts := badgerds.DefaultOptions
+	return badgerds.NewDatastore(p, &opts)
 }
 
 func FlatFS(cfg *config.Config) (ds.Datastore, error) {
