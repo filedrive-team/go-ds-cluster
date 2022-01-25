@@ -423,6 +423,9 @@ func (cl *client) ListFiles(prefix string) (chan core.Pair, error) {
 					logging.Error(err)
 					return
 				}
+				if ent.Code == ErrEOF {
+					return
+				}
 				if ent.Code != ErrNone {
 					logging.Error(ent.Msg)
 					return

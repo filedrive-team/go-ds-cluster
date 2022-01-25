@@ -15,6 +15,7 @@ import (
 )
 
 const AuthFailed = "unauthorized access denied"
+const EOF = "query result finished"
 const waitClose = 20
 
 // Interceptor if return true, than send ReplyMessage to sender and skip the next processing
@@ -136,12 +137,22 @@ func (sv *server) handleStream(s network.Stream) {
 	}
 }
 
-func (sv *server) authFailedMag(s network.Stream) {
+func (sv *server) authFailedMsg(s network.Stream) {
 	res := &ReplyMessage{
 		Code: ErrAuthFailed,
 		Msg:  AuthFailed,
 	}
 	if err := WriteReplyMsg(s, res, sv.timeout); err != nil {
+		logging.Error(err)
+	}
+}
+
+func (sv *server) queryResultEOFMsg(s network.Stream) {
+	res := &QueryResultEntry{
+		Code: ErrEOF,
+		Msg:  EOF,
+	}
+	if err := WriteQueryResultEntry(s, res, sv.timeout); err != nil {
 		logging.Error(err)
 	}
 }
@@ -308,6 +319,7 @@ func (sv *server) query(s network.Stream, req *Request) {
 			return
 		}
 	}
+	sv.queryResultEOFMsg(s)
 }
 
 func (sv *server) listFiles(s network.Stream, req *Request) {
@@ -340,4 +352,5 @@ func (sv *server) listFiles(s network.Stream, req *Request) {
 			return
 		}
 	}
+	sv.queryResultEOFMsg(s)
 }
