@@ -3,6 +3,7 @@ package remoteclient
 import (
 	"context"
 	"encoding/json"
+	"github.com/ipfs/go-datastore"
 	"io"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ type Client struct {
 	ctx     context.Context
 	dagserv format.DAGService
 	rdc     core.RemoteDataNodeClient
+	datast  *RemoteStore
 	cfg     *Config
 }
 
@@ -49,10 +51,15 @@ func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
 	return &Client{
 		ctx:     ctx,
 		dagserv: dagServ,
+		datast:  cds,
 		rdc:     rc,
 		cfg:     cfg,
 	}, nil
 
+}
+
+func (cl *Client) GetDataStore() datastore.Batching {
+	return cl.datast
 }
 
 func (cl *Client) Get(objname string) (io.ReadCloser, error) {

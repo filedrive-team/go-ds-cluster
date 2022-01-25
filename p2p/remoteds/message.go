@@ -23,6 +23,7 @@ const (
 	ErrNone ErrCode = iota
 	ErrNotFound
 	ErrAuthFailed
+	ErrEOF
 
 	ErrOthers = 100
 )

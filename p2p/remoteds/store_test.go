@@ -3,6 +3,7 @@ package remoteds
 import (
 	"bytes"
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/filedrive-team/go-ds-cluster/p2p"
@@ -23,6 +24,17 @@ var tdata = []Pair{
 	{"afsis", []byte("Africa Soil Information Service (AfSIS) Soil Chemistry")},
 }
 
+func userPrefix(req *Request, reply *ReplyMessage) bool {
+	var prefix string
+	switch req.Action {
+	case ActTouchFile, ActFileInfo, ActDeleteFile, ActListFiles:
+		prefix = filepath.Join("/", PREFIX, "ccc")
+		req.InnerFileKey = filepath.Join(prefix, req.Key)
+		req.InnerFilePrefix = prefix
+	}
+	return false
+}
+
 func TestDataNode(t *testing.T) {
 	h1, err := p2p.MakeBasicHost(utils.RandPort())
 	if err != nil {
@@ -39,10 +51,8 @@ func TestDataNode(t *testing.T) {
 
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
-	verify := func(token string) bool { return true }
-	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 180, verify, userPrefix)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 180, userPrefix)
 	defer server.Close()
 	server.Serve()
 
@@ -150,10 +160,8 @@ func TestDataNodeQuery(t *testing.T) {
 
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
-	verify := func(token string) bool { return true }
-	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify, userPrefix)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, userPrefix)
 	defer server.Close()
 	server.Serve()
 
@@ -216,10 +224,8 @@ func TestListFiles(t *testing.T) {
 
 	ctx := context.Background()
 	memStore := ds.NewMapDatastore()
-	verify := func(token string) bool { return true }
-	userPrefix := func(token string) string { return "/ccc" }
 
-	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, verify, userPrefix)
+	server := NewStoreServer(ctx, h2, PROTOCOL_V1, memStore, memStore, false, 2, userPrefix)
 	defer server.Close()
 	server.Serve()
 
