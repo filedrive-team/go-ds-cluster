@@ -14,8 +14,28 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
-const authFailed = "unauthorized access denied"
+const AuthFailed = "unauthorized access denied"
 const waitClose = 20
+
+// Interceptor if return true, than send ReplyMessage to sender and skip the next processing
+type Interceptor func(req *Request, reply *ReplyMessage) bool
+
+func DefaultUserPrefix(req *Request, reply *ReplyMessage) bool {
+	var prefix string
+	switch req.Action {
+	case ActTouchFile, ActFileInfo, ActDeleteFile, ActListFiles:
+		prefix = filepath.Join("/", PREFIX, "default")
+		req.InnerFileKey = filepath.Join(prefix, req.Key)
+		req.InnerFilePrefix = prefix
+	}
+	return false
+}
+
+type Request struct {
+	*RequestMessage
+	InnerFileKey    string
+	InnerFilePrefix string
+}
 
 type server struct {
 	ctx           context.Context
@@ -25,11 +45,10 @@ type server struct {
 	fds           ds.Datastore
 	disableDelete bool
 	timeout       int
-	isValid       func(token string) bool
-	userPrefix    func(token string) string
+	interceptors  []Interceptor
 }
 
-func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds ds.Datastore, disableDelete bool, timeout int, verify func(token string) bool, userPrefix func(token string) string) core.DataNodeServer {
+func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds ds.Datastore, disableDelete bool, timeout int, interceptors ...Interceptor) core.DataNodeServer {
 	return &server{
 		ctx:           ctx,
 		host:          h,
@@ -38,8 +57,7 @@ func NewStoreServer(ctx context.Context, h host.Host, pid protocol.ID, ds, fds d
 		fds:           fds,
 		disableDelete: disableDelete,
 		timeout:       timeout,
-		isValid:       verify,
-		userPrefix:    userPrefix,
+		interceptors:  interceptors,
 	}
 }
 
@@ -59,8 +77,8 @@ func (sv *server) Serve() {
 	sv.host.SetStreamHandler(sv.protocol, sv.handleStream)
 }
 
-func (sv *server) verify(msg *RequestMessage) bool {
-	return sv.isValid(msg.AccessToken)
+func (sv *server) AppendInterceptors(interceptors ...Interceptor) {
+	sv.interceptors = append(sv.interceptors, interceptors...)
 }
 
 func (sv *server) handleStream(s network.Stream) {
@@ -77,55 +95,58 @@ func (sv *server) handleStream(s network.Stream) {
 		logging.Error(err)
 		return
 	}
-	if !sv.verify(reqMsg) {
-		logging.Warn(authFailed, *reqMsg)
-		sv.authFailedMag(s)
-		return
-	}
-	var prefix string
-	if reqMsg.Action == ActTouchFile || reqMsg.Action == ActFileInfo || reqMsg.Action == ActDeleteFile || reqMsg.Action == ActListFiles {
-		prefix = filepath.Join("/", PREFIX, sv.userPrefix(reqMsg.AccessToken))
-		reqMsg.Key = filepath.Join(prefix, reqMsg.Key)
+	req := &Request{
+		RequestMessage: reqMsg,
 	}
 
-	logging.Infof("req action %v", reqMsg.Action)
-	switch reqMsg.Action {
+	reply := &ReplyMessage{}
+	for _, handler := range sv.interceptors {
+		if handler(req, reply) {
+			if err := WriteReplyMsg(s, reply, sv.timeout); err != nil {
+				logging.Error(err)
+			}
+			return
+		}
+	}
+
+	logging.Infof("req action %v", req.Action)
+	switch req.Action {
 	case ActGet:
-		sv.get(s, reqMsg)
+		sv.get(s, req)
 	case ActGetSize:
-		sv.getSize(s, reqMsg)
+		sv.getSize(s, req)
 	case ActHas:
-		sv.has(s, reqMsg)
+		sv.has(s, req)
 	case ActPut:
-		sv.put(s, reqMsg)
+		sv.put(s, req)
 	case ActDelete:
-		sv.delete(s, reqMsg)
+		sv.delete(s, req)
 	case ActQuery:
-		sv.query(s, reqMsg)
+		sv.query(s, req)
 	case ActTouchFile:
-		sv.touchFile(s, reqMsg)
+		sv.touchFile(s, req)
 	case ActFileInfo:
-		sv.fileInfo(s, reqMsg)
+		sv.fileInfo(s, req)
 	case ActDeleteFile:
-		sv.deleteFile(s, reqMsg)
+		sv.deleteFile(s, req)
 	case ActListFiles:
-		sv.listFiles(s, reqMsg, prefix)
+		sv.listFiles(s, req)
 	default:
-		logging.Warnf("unhandled action: %v", reqMsg.Action)
+		logging.Warnf("unhandled action: %v", req.Action)
 	}
 }
 
 func (sv *server) authFailedMag(s network.Stream) {
 	res := &ReplyMessage{
 		Code: ErrAuthFailed,
-		Msg:  authFailed,
+		Msg:  AuthFailed,
 	}
 	if err := WriteReplyMsg(s, res, sv.timeout); err != nil {
 		logging.Error(err)
 	}
 }
 
-func (sv *server) put(s network.Stream, req *RequestMessage) {
+func (sv *server) put(s network.Stream, req *Request) {
 	logging.Infof("put %s, value size: %d", req.Key, len(req.Value))
 	res := &ReplyMessage{}
 	if err := sv.ds.Put(ds.NewKey(req.Key), req.Value); err != nil {
@@ -138,10 +159,10 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) touchFile(s network.Stream, req *RequestMessage) {
-	logging.Infof("put %s, value size: %d", req.Key, len(req.Value))
+func (sv *server) touchFile(s network.Stream, req *Request) {
+	logging.Infof("put %s, value size: %d", req.InnerFileKey, len(req.Value))
 	res := &ReplyMessage{}
-	if err := sv.fds.Put(ds.NewKey(req.Key), req.Value); err != nil {
+	if err := sv.fds.Put(ds.NewKey(req.InnerFileKey), req.Value); err != nil {
 		res.Code = ErrOthers
 		res.Msg = err.Error()
 	}
@@ -151,7 +172,7 @@ func (sv *server) touchFile(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) has(s network.Stream, req *RequestMessage) {
+func (sv *server) has(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
 	exists, err := sv.ds.Has(ds.NewKey(req.Key))
 	if err != nil {
@@ -169,7 +190,7 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) getSize(s network.Stream, req *RequestMessage) {
+func (sv *server) getSize(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
 	size, err := sv.ds.GetSize(ds.NewKey(req.Key))
 	if err != nil {
@@ -187,7 +208,7 @@ func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) get(s network.Stream, req *RequestMessage) {
+func (sv *server) get(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
 	v, err := sv.ds.Get(ds.NewKey(req.Key))
 	if err != nil {
@@ -205,9 +226,9 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) fileInfo(s network.Stream, req *RequestMessage) {
+func (sv *server) fileInfo(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
-	v, err := sv.fds.Get(ds.NewKey(req.Key))
+	v, err := sv.fds.Get(ds.NewKey(req.InnerFileKey))
 	if err != nil {
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
@@ -223,7 +244,7 @@ func (sv *server) fileInfo(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) delete(s network.Stream, req *RequestMessage) {
+func (sv *server) delete(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
 
 	if sv.disableDelete {
@@ -240,13 +261,13 @@ func (sv *server) delete(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) deleteFile(s network.Stream, req *RequestMessage) {
+func (sv *server) deleteFile(s network.Stream, req *Request) {
 	res := &ReplyMessage{}
 
 	if sv.disableDelete {
 		logging.Infof("delete operation disabled, ignore delete %s", req.Key)
 	} else {
-		err := sv.fds.Delete(ds.NewKey(req.Key))
+		err := sv.fds.Delete(ds.NewKey(req.InnerFileKey))
 		if err != nil {
 			res.Code = ErrOthers
 			res.Msg = err.Error()
@@ -257,7 +278,7 @@ func (sv *server) deleteFile(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) query(s network.Stream, req *RequestMessage) {
+func (sv *server) query(s network.Stream, req *Request) {
 	qresult, err := sv.ds.Query(DSQuery(req.Query))
 	if err != nil {
 		res := &QueryResultEntry{}
@@ -289,8 +310,8 @@ func (sv *server) query(s network.Stream, req *RequestMessage) {
 	}
 }
 
-func (sv *server) listFiles(s network.Stream, req *RequestMessage, prefix string) {
-	qresult, err := sv.fds.Query(dsq.Query{Prefix: req.Key})
+func (sv *server) listFiles(s network.Stream, req *Request) {
+	qresult, err := sv.fds.Query(dsq.Query{Prefix: req.InnerFileKey})
 	if err != nil {
 		res := &QueryResultEntry{}
 		res.Code = ErrOthers
@@ -311,7 +332,7 @@ func (sv *server) listFiles(s network.Stream, req *RequestMessage, prefix string
 			}
 			return
 		}
-		res.Key = strings.TrimPrefix(result.Key, prefix)
+		res.Key = strings.TrimPrefix(result.Key, req.InnerFilePrefix)
 		res.Value = result.Value
 		res.Size = int64(result.Size)
 		if err := WriteQueryResultEntry(s, res, sv.timeout); err != nil {
