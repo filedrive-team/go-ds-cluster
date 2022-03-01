@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
+	"github.com/filedrive-team/go-ds-cluster/diskvds"
 	"github.com/filedrive-team/go-ds-cluster/miniods"
 	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
@@ -37,6 +38,7 @@ var confpath string
 var mongodb string
 var minio string
 var useBadger bool
+var diskv string
 var loglevel string
 var disableDelete string
 var identityIdx int
@@ -46,6 +48,7 @@ func main() {
 	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
 	flag.StringVar(&minio, "minio", "", "")
+	flag.StringVar(&diskv, "diskv", "", "")
 	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.IntVar(&identityIdx, "identity", 0, "get node identity from bootstrap node")
@@ -146,6 +149,27 @@ func main() {
 				},
 			})
 			return mds, nil
+		})
+	} else if diskv != "" {
+		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+			cfgpath := diskv
+			if !strings.HasPrefix(cfgpath, "/") {
+				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+			}
+			conf, err := diskvds.LoadConfig(cfgpath)
+			if err != nil {
+				return nil, err
+			}
+			dds, err := diskvds.NewDiskvDS(ctx, conf)
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return dds.Close()
+				},
+			})
+			return dds, nil
 		})
 	} else if useBadger {
 		dsOption = fx.Provide(BadgerDS)
