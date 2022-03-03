@@ -160,6 +160,9 @@ func main() {
 			if err != nil {
 				return nil, err
 			}
+			if !strings.HasPrefix(conf.Dir, "/") {
+				conf.Dir = filepath.Join(cfg.ConfPath, conf.Dir)
+			}
 			dds, err := diskvds.NewDiskvDS(ctx, conf)
 			if err != nil {
 				return nil, err

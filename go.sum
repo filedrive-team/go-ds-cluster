@@ -201,6 +201,8 @@ github.com/filecoin-project/go-padreader v0.0.1/go.mod h1:VYVPJqwpsfmtoHnAmPx6MU
 github.com/filecoin-project/go-state-types v0.0.0-20200903145444-247639ffa6ad/go.mod h1:IQ0MBPnonv35CJHtWSN3YY1Hz2gkPru1Q9qoaYLxx9I=
 github.com/filedag-project/filedag-storage v0.0.0-20220301062829-f923238c2a4b h1:sEVqlP39m5O1VWTFAGrvtcVUiypWbiVnf5sYV60bnxg=
 github.com/filedag-project/filedag-storage v0.0.0-20220301062829-f923238c2a4b/go.mod h1:QnyGe8myXsl9M03UmfG2jmKDnjAZ3NwhnBmdkit+uQs=
+github.com/filedag-project/filedag-storage v0.0.0-20220303062701-ea696667d0a0 h1:Ek2KXDh2rq0tb8Zu9jxDOEtu/2D2K8xCzc93BmDf9JA=
+github.com/filedag-project/filedag-storage v0.0.0-20220303062701-ea696667d0a0/go.mod h1:QnyGe8myXsl9M03UmfG2jmKDnjAZ3NwhnBmdkit+uQs=
 github.com/filedrive-team/filehelper v0.0.2/go.mod h1:nwlxmeyGqIt2zl2XqL59ySUybmutjmEqFOYEWpfNzVg=
 github.com/filedrive-team/filehelper v0.0.4/go.mod h1:TpZS08Qcbfzc7oF07juG8RsCrg2F88cW+A+EMPP+6AA=
 github.com/filedrive-team/filehelper v0.0.9/go.mod h1:AEis9leNL2wiBOpDJrWCkw8j/MWeb8E+SJq9CQjh3Ds=

@@ -56,13 +56,23 @@ func (dis *DiskvDS) Put(k ds.Key, value []byte) error {
 }
 
 func (dis *DiskvDS) Get(k ds.Key) ([]byte, error) {
-	return dis.kv.Get(k.String())
+	v, err := dis.kv.Get(k.String())
+	if err != nil {
+		if err == diskv.ErrNotFound {
+			return nil, ds.ErrNotFound
+		}
+		return nil, err
+	}
+	return v, nil
 }
 
 func (dis *DiskvDS) Has(k ds.Key) (bool, error) {
 	_, err := dis.kv.Size(k.String())
 	if err != nil {
-		return false, nil
+		if err == diskv.ErrNotFound {
+			return false, ds.ErrNotFound
+		}
+		return false, err
 	}
 	return true, nil
 }
