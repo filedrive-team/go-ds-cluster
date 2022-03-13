@@ -239,6 +239,8 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg
 func BadgerDS(cfg *config.Config) (ds.Datastore, error) {
 	p := cfg.ConfPath + "/blocks"
 	opts := badgerds.DefaultOptions
+	// set value log file size: 16 GiB
+	opts.ValueLogFileSize = 16<<30 - 1
 	return badgerds.NewDatastore(p, &opts)
 }
 
