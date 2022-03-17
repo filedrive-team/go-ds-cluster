@@ -17,7 +17,8 @@ var _ ds.Datastore = (*DiskvDS)(nil)
 type Config struct {
 	Dir            string
 	MaxLinkDagSize int
-	Parallel       int
+	MaxRead        int
+	MaxWrite       int
 	MaxCacheDags   int
 }
 
@@ -37,8 +38,11 @@ func NewDiskvDS(ctx context.Context, cfg *Config) (*DiskvDS, error) {
 		if cfg.MaxLinkDagSize > 0 {
 			conf.MaxLinkDagSize = cfg.MaxLinkDagSize
 		}
-		if cfg.Parallel > 0 {
-			conf.Parallel = cfg.Parallel
+		if cfg.MaxRead > 0 {
+			conf.MaxRead = cfg.MaxRead
+		}
+		if cfg.MaxWrite > 0 {
+			conf.MaxWrite = cfg.MaxWrite
 		}
 	})
 	if err != nil {
