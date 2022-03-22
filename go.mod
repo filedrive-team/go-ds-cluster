@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4
-	github.com/filedag-project/filedag-storage v0.0.0-20220321063950-a05a3527361b
+	github.com/filedag-project/filedag-storage v0.0.0-20220322084951-f57631729bcb
 	github.com/filedrive-team/filehelper v0.0.17-0.20220110104019-c21f9a8a6446
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/ipfs/go-blockservice v0.1.7
