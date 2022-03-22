@@ -15,8 +15,8 @@ import (
 
 	"github.com/filedrive-team/go-ds-cluster/config"
 	"github.com/filedrive-team/go-ds-cluster/diskvds"
-	"github.com/filedrive-team/go-ds-cluster/miniods"
 	"github.com/filedrive-team/go-ds-cluster/mongods"
+	"github.com/filedrive-team/go-ds-cluster/mutcaskds"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/share"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
@@ -36,9 +36,8 @@ import (
 var logging = log.Logger("dscluster")
 var confpath string
 var mongodb string
-var minio string
-var useBadger bool
 var diskv string
+var mutcask string
 var loglevel string
 var disableDelete string
 var identityIdx int
@@ -47,13 +46,12 @@ var bootstrapper string
 func main() {
 	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
 	flag.StringVar(&mongodb, "mongodb", "", "")
-	flag.StringVar(&minio, "minio", "", "")
 	flag.StringVar(&diskv, "diskv", "", "")
+	flag.StringVar(&mutcask, "mutcask", "", "")
 	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.IntVar(&identityIdx, "identity", 0, "get node identity from bootstrap node")
 	flag.StringVar(&bootstrapper, "bootstrapper", "", "")
-	flag.BoolVar(&useBadger, "badger", false, "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
 	var disabledel bool
@@ -129,27 +127,6 @@ func main() {
 			})
 			return monds, nil
 		})
-	} else if minio != "" {
-		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
-			cfgpath := minio
-			if !strings.HasPrefix(cfgpath, "/") {
-				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
-			}
-			miniocfg, err := miniods.LoadConfig(cfgpath)
-			if err != nil {
-				return nil, err
-			}
-			mds, err := miniods.NewMinioDS(ctx, miniocfg)
-			if err != nil {
-				return nil, err
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(ctx context.Context) error {
-					return mds.Close()
-				},
-			})
-			return mds, nil
-		})
 	} else if diskv != "" {
 		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
 			cfgpath := diskv
@@ -174,10 +151,32 @@ func main() {
 			})
 			return dds, nil
 		})
-	} else if useBadger {
-		dsOption = fx.Provide(BadgerDS)
+	} else if mutcask != "" {
+		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+			cfgpath := mutcask
+			if !strings.HasPrefix(cfgpath, "/") {
+				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+			}
+			conf, err := mutcaskds.LoadConfig(cfgpath)
+			if err != nil {
+				return nil, err
+			}
+			if !strings.HasPrefix(conf.Path, "/") {
+				conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
+			}
+			mutds, err := mutcaskds.NewMutcaskDS(ctx, conf)
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return mutds.Close()
+				},
+			})
+			return mutds, nil
+		})
 	} else {
-		dsOption = fx.Provide(FlatFS)
+		dsOption = fx.Provide(BadgerDS)
 	}
 
 	app := fx.New(
