@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
@@ -12,14 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/pnet"
-	transport "github.com/libp2p/go-libp2p-core/transport"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
-	swarm "github.com/libp2p/go-libp2p-swarm"
 )
-
-func init() {
-	swarm.DialTimeoutLocal = transport.DialTimeout
-}
 
 func MakeBasicHost(listenPort string) (host.Host, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
@@ -34,7 +26,7 @@ func MakeBasicHost(listenPort string) (host.Host, error) {
 		libp2p.DefaultTransports,
 	}
 
-	return libp2p.New(context.Background(), opts...)
+	return libp2p.New(opts...)
 }
 
 func HostFromConf(cfg *config.Config) (host.Host, error) {
@@ -48,9 +40,8 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
-		libp2p.Transport(libp2pquic.NewTransport),
 	}
-	h, err := libp2p.New(context.Background(), opts...)
+	h, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,5 +73,5 @@ func MakeHost(listenPort string, keypath string) (host.Host, error) {
 		opts = append(opts, libp2p.PrivateNetwork(psk))
 	}
 
-	return libp2p.New(context.Background(), opts...)
+	return libp2p.New(opts...)
 }
