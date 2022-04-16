@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
-	"github.com/filedrive-team/go-ds-cluster/mongods"
 	"github.com/filedrive-team/go-ds-cluster/mutcaskds"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/share"
@@ -34,7 +33,6 @@ import (
 
 var logging = log.Logger("dscluster")
 var confpath string
-var mongodb string
 var mutcask string
 var loglevel string
 var disableDelete string
@@ -43,7 +41,6 @@ var bootstrapper string
 
 func main() {
 	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
-	flag.StringVar(&mongodb, "mongodb", "", "")
 	flag.StringVar(&mutcask, "mutcask", "", "")
 	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
@@ -109,22 +106,7 @@ func main() {
 	})
 
 	var dsOption fx.Option
-	if mongodb != "" {
-		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle) (ds.Datastore, error) {
-			monds, err := mongods.NewMongoDS(ctx, mongods.ExtendConf(&mongods.Config{
-				Uri: mongodb,
-			}))
-			if err != nil {
-				return nil, err
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(ctx context.Context) error {
-					return monds.Close()
-				},
-			})
-			return monds, nil
-		})
-	} else if mutcask != "" {
+	if mutcask != "" {
 		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
 			cfgpath := mutcask
 			if !strings.HasPrefix(cfgpath, "/") {
