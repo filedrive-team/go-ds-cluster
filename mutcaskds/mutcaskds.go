@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/filedag-project/filedag-storage/kv"
-	"github.com/filedag-project/filedag-storage/kv/mutcask"
+	kv "github.com/filedag-project/mutcask"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	"golang.org/x/xerrors"
@@ -25,7 +24,7 @@ type MutcaskDS struct {
 }
 
 func NewMutcaskDS(ctx context.Context, cfg *Config) (*MutcaskDS, error) {
-	kv, err := mutcask.NewMutcask(func(conf *mutcask.Config) {
+	kv, err := kv.NewMutcask(func(conf *kv.Config) {
 		if cfg.Path != "" {
 			conf.Path = cfg.Path
 		}
