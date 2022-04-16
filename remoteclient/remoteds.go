@@ -41,37 +41,37 @@ func NewRemoteStoreWithClient(ctx context.Context, h host.Host, client core.Remo
 	}
 }
 
-func (d *RemoteStore) Put(k ds.Key, value []byte) error {
+func (d *RemoteStore) Put(ctx context.Context, k ds.Key, value []byte) error {
 	kstr := k.String()
 
 	return d.node.Put(kstr, value)
 }
 
-func (d *RemoteStore) Get(k ds.Key) ([]byte, error) {
+func (d *RemoteStore) Get(ctx context.Context, k ds.Key) ([]byte, error) {
 	kstr := k.String()
 
 	return d.node.Get(kstr)
 }
 
-func (d *RemoteStore) Has(k ds.Key) (bool, error) {
+func (d *RemoteStore) Has(ctx context.Context, k ds.Key) (bool, error) {
 	kstr := k.String()
 
 	return d.node.Has(kstr)
 }
 
-func (d *RemoteStore) GetSize(k ds.Key) (int, error) {
+func (d *RemoteStore) GetSize(ctx context.Context, k ds.Key) (int, error) {
 	kstr := k.String()
 
 	return d.node.GetSize(kstr)
 }
 
-func (d *RemoteStore) Delete(k ds.Key) error {
+func (d *RemoteStore) Delete(ctx context.Context, k ds.Key) error {
 	kstr := k.String()
 
 	return d.node.Delete(kstr)
 }
 
-func (d *RemoteStore) Sync(ds.Key) error {
+func (d *RemoteStore) Sync(context.Context, ds.Key) error {
 	return nil
 }
 
@@ -79,27 +79,31 @@ func (d *RemoteStore) Close() error {
 	return d.host.Close()
 }
 
-func (d *RemoteStore) Query(q dsq.Query) (dsq.Results, error) {
+func (d *RemoteStore) Query(ctx context.Context, q dsq.Query) (dsq.Results, error) {
 	return d.node.Query(q)
 }
 
 type batch struct {
-	s ds.Datastore
+	s   ds.Datastore
+	ctx context.Context
 }
 
-func (d *RemoteStore) Batch() (ds.Batch, error) {
-	return &batch{d}, nil
+func (d *RemoteStore) Batch(ctx context.Context) (ds.Batch, error) {
+	return &batch{
+		s:   d,
+		ctx: ctx,
+	}, nil
 }
 
-func (b *batch) Put(key ds.Key, value []byte) error {
-	return b.s.Put(key, value)
+func (b *batch) Put(ctx context.Context, key ds.Key, value []byte) error {
+	return b.s.Put(b.ctx, key, value)
 }
 
-func (b *batch) Delete(key ds.Key) error {
-	return b.s.Delete(key)
+func (b *batch) Delete(ctx context.Context, key ds.Key) error {
+	return b.s.Delete(b.ctx, key)
 }
 
-func (b *batch) Commit() error {
+func (b *batch) Commit(ctx context.Context) error {
 	return nil
 }
 

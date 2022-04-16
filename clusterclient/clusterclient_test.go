@@ -162,14 +162,14 @@ func TestClusterClient(t *testing.T) {
 	defer client.Close()
 
 	for i, item := range tdata {
-		err = client.Put(ds.NewKey(item.Key), item.Value)
+		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
 		if err != nil {
 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
 		}
 	}
 
 	for _, item := range tdata {
-		has, err := client.Has(ds.NewKey(item.Key))
+		has, err := client.Has(ctx, ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,7 +179,7 @@ func TestClusterClient(t *testing.T) {
 	}
 
 	for _, item := range tdata {
-		size, err := client.GetSize(ds.NewKey(item.Key))
+		size, err := client.GetSize(ctx, ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -189,7 +189,7 @@ func TestClusterClient(t *testing.T) {
 	}
 
 	for _, item := range tdata {
-		v, err := client.Get(ds.NewKey(item.Key))
+		v, err := client.Get(ctx, ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -198,7 +198,7 @@ func TestClusterClient(t *testing.T) {
 		}
 	}
 	for _, item := range tdata {
-		err := client.Delete(ds.NewKey(item.Key))
+		err := client.Delete(ctx, ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -256,7 +256,7 @@ func TestReadOnlyClient(t *testing.T) {
 	defer client.Close()
 
 	for _, item := range tdata {
-		err = client.Put(ds.NewKey(item.Key), item.Value)
+		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
 		if err == nil {
 			t.Fatal("readonly client should not has right to put data")
 		}
@@ -314,13 +314,13 @@ func TestClusterClientQuery(t *testing.T) {
 	defer client.Close()
 
 	for i, item := range tdata {
-		err = client.Put(ds.NewKey(item.Key), item.Value)
+		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
 		if err != nil {
 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
 		}
 	}
 
-	results, err := client.Query(dsq.Query{})
+	results, err := client.Query(ctx, dsq.Query{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,92 +352,6 @@ func findEntry(k ds.Key, ents []dsq.Entry) (dsq.Entry, bool) {
 	}
 	return dsq.Entry{}, false
 }
-
-// func TestClusterClientByConfGen(t *testing.T) {
-// 	log.SetLogLevel("*", "info")
-// 	cluster_node_num := 3
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-// 	var err error
-
-// 	srvCfgs, err := config.GenClusterConf(cluster_node_num)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	var sw sync.WaitGroup
-// 	sw.Add(cluster_node_num)
-// 	for _, cfg := range srvCfgs {
-// 		go func(ctx context.Context, cfg *config.Config) {
-// 			srv, err := serverFromCfg(ctx, cfg)
-// 			if err != nil {
-// 				sw.Done()
-// 				t.Error(err)
-// 				return
-// 			}
-// 			sw.Done()
-// 			srv.Serve()
-
-// 			<-ctx.Done()
-// 			srv.Close()
-// 		}(ctx, cfg)
-// 	}
-// 	sw.Wait()
-
-// 	clientCfg, err := config.GenClientConf()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	clientCfg.Nodes = srvCfgs[1].Nodes
-// 	client, err := NewClusterClient(ctx, clientCfg)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer client.Close()
-
-// 	for i, item := range tdata {
-// 		err = client.Put(ds.NewKey(item.Key), item.Value)
-// 		if err != nil {
-// 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
-// 		}
-// 	}
-
-// 	for _, item := range tdata {
-// 		has, err := client.Has(ds.NewKey(item.Key))
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if !has {
-// 			t.Fatalf("should has %s", item.Key)
-// 		}
-// 	}
-
-// 	for _, item := range tdata {
-// 		size, err := client.GetSize(ds.NewKey(item.Key))
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if size != len(item.Value) {
-// 			t.Fatalf("%s size not match", item.Key)
-// 		}
-// 	}
-
-// 	for _, item := range tdata {
-// 		v, err := client.Get(ds.NewKey(item.Key))
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if !bytes.Equal(v, item.Value) {
-// 			t.Fatal("retrived value not match")
-// 		}
-// 	}
-
-// 	for _, item := range tdata {
-// 		err := client.Delete(ds.NewKey(item.Key))
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 	}
-// }
 
 func cfgFromString(str string) (*config.Config, error) {
 	cfg := &config.Config{}

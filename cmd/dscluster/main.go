@@ -20,14 +20,12 @@ import (
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	"github.com/filedrive-team/go-ds-cluster/utils"
 	ds "github.com/ipfs/go-datastore"
-	flatfs "github.com/ipfs/go-ds-flatfs"
 	log "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
-	badgerds "github.com/textileio/go-ds-badger3"
 	"go.uber.org/fx"
 )
 
@@ -131,7 +129,8 @@ func main() {
 			return mutds, nil
 		})
 	} else {
-		dsOption = fx.Provide(BadgerDS)
+		logging.Error("Expecting path to mutcask config")
+		return
 	}
 
 	app := fx.New(
@@ -188,23 +187,6 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg
 			return nil
 		},
 	})
-}
-
-func BadgerDS(cfg *config.Config) (ds.Datastore, error) {
-	p := cfg.ConfPath + "/blocks"
-	opts := badgerds.DefaultOptions
-	// set value log file size: 2 GiB
-	opts.ValueLogFileSize = 2<<30 - 1
-	return badgerds.NewDatastore(p, &opts)
-}
-
-func FlatFS(cfg *config.Config) (ds.Datastore, error) {
-	p := cfg.ConfPath + "/blocks"
-	shardFunc, err := flatfs.ParseShardFunc("/repo/flatfs/shard/v1/next-to-last/2")
-	if err != nil {
-		return nil, err
-	}
-	return flatfs.CreateOrOpen(p, shardFunc, true)
 }
 
 func ProtocolID() protocol.ID {

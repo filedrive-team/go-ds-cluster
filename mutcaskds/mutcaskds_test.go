@@ -46,12 +46,13 @@ func TestMutcaskds(t *testing.T) {
 	cfg := &Config{}
 	cfg.Path = tmpdirpath(t)
 	cfg.CaskNum = 8
-	dis, err := NewMutcaskDS(context.Background(), cfg)
+	ctx := context.Background()
+	dis, err := NewMutcaskDS(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, item := range kvdata {
-		if err := dis.Put(ds.NewKey(item.Key), item.Value); err != nil {
+		if err := dis.Put(ctx, ds.NewKey(item.Key), item.Value); err != nil {
 			t.Fatal(err)
 		}
 	}
