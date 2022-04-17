@@ -103,27 +103,12 @@ func main() {
 		return cfg
 	})
 
-	var dsOption fx.Option
-	// load customized mutcask configs
-	conf := &mutcaskds.Config{
-		Path:    cfg.Mutcask.Path,
-		CaskNum: cfg.Mutcask.CaskNum,
-	}
-	if mutcask != "" {
-		cfgpath := mutcask
-		if !strings.HasPrefix(cfgpath, "/") {
-			cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
-		}
-		conf, err = mutcaskds.LoadConfig(cfgpath)
+	dsOption := fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+		// load customized mutcask configs
+		conf, err := loadMutcaskConf(cfg, mutcask)
 		if err != nil {
-			logging.Error(err)
-			return
+			return nil, err
 		}
-	}
-	if !strings.HasPrefix(conf.Path, "/") {
-		conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
-	}
-	dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
 		mutds, err := mutcaskds.NewMutcaskDS(ctx, conf)
 		if err != nil {
 			return nil, err
@@ -262,6 +247,33 @@ func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string, dis
 	err = ioutil.WriteFile(path.Join(confpath, config.DefaultConfigJson), cfgbs, 0644)
 	if err != nil {
 		return
+	}
+	return
+}
+
+func loadMutcaskConf(cfg *config.Config, mutcaskConf string) (conf *mutcaskds.Config, err error) {
+	conf = &mutcaskds.Config{
+		Path:    cfg.Mutcask.Path,
+		CaskNum: cfg.Mutcask.CaskNum,
+	}
+	if mutcaskConf != "" {
+		cfgpath := mutcaskConf
+		if !strings.HasPrefix(cfgpath, "/") {
+			cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+		}
+		conf, err = mutcaskds.LoadConfig(cfgpath)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if conf.Path == "" {
+		conf.Path = config.DefaultMutcaskPath
+	}
+	if conf.CaskNum == 0 {
+		conf.CaskNum = config.DefaultCaskNum
+	}
+	if !strings.HasPrefix(conf.Path, "/") {
+		conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
 	}
 	return
 }

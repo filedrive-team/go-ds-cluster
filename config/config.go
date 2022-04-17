@@ -10,6 +10,8 @@ import (
 
 const DefaultConfigPath = ".dscluster"
 const DefaultConfigJson = "config.json"
+const DefaultMutcaskPath = "mutcask"
+const DefaultCaskNum = 8
 
 type Config struct {
 	Identity       Identity    `json:"identity"`
