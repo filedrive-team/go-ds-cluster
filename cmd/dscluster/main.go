@@ -104,34 +104,37 @@ func main() {
 	})
 
 	var dsOption fx.Option
-	if mutcask != "" {
-		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
-			cfgpath := mutcask
-			if !strings.HasPrefix(cfgpath, "/") {
-				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
-			}
-			conf, err := mutcaskds.LoadConfig(cfgpath)
-			if err != nil {
-				return nil, err
-			}
-			if !strings.HasPrefix(conf.Path, "/") {
-				conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
-			}
-			mutds, err := mutcaskds.NewMutcaskDS(ctx, conf)
-			if err != nil {
-				return nil, err
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(ctx context.Context) error {
-					return mutds.Close()
-				},
-			})
-			return mutds, nil
-		})
-	} else {
-		logging.Error("Expecting path to mutcask config")
-		return
+	// load customized mutcask configs
+	conf := &mutcaskds.Config{
+		Path:    cfg.Mutcask.Path,
+		CaskNum: cfg.Mutcask.CaskNum,
 	}
+	if mutcask != "" {
+		cfgpath := mutcask
+		if !strings.HasPrefix(cfgpath, "/") {
+			cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+		}
+		conf, err = mutcaskds.LoadConfig(cfgpath)
+		if err != nil {
+			logging.Error(err)
+			return
+		}
+	}
+	if !strings.HasPrefix(conf.Path, "/") {
+		conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
+	}
+	dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+		mutds, err := mutcaskds.NewMutcaskDS(ctx, conf)
+		if err != nil {
+			return nil, err
+		}
+		lc.Append(fx.Hook{
+			OnStop: func(ctx context.Context) error {
+				return mutds.Close()
+			},
+		})
+		return mutds, nil
+	})
 
 	app := fx.New(
 		ctxOption,

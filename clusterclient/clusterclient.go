@@ -31,6 +31,9 @@ type ClusterClient struct {
 }
 
 func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, error) {
+	if len(cfg.Nodes) == 0 {
+		return nil, xerrors.New("There hasn't any cluster node in config")
+	}
 	h, err := p2p.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
