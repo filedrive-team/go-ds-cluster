@@ -72,11 +72,16 @@ var importDatasetCmd = &cli.Command{
 	Name:  "import-dataset",
 	Usage: "import files from the specified dataset",
 	Flags: []cli.Flag{
-		// &cli.StringFlag{
-		// 	Name:     "dscluster",
-		// 	Required: true,
-		// 	Usage:    "specify the dscluster config path",
-		// },
+		&cli.StringFlag{
+			Name:     "prefix",
+			Required: true,
+			Usage:    "specify the dscluster config path",
+		},
+		&cli.StringFlag{
+			Name:     "record-dir",
+			Required: true,
+			Usage:    "specify the dscluster config path",
+		},
 		&cli.IntFlag{
 			Name:  "retry",
 			Value: 5,
@@ -114,13 +119,17 @@ var importDatasetCmd = &cli.Command{
 		parallel := c.Int("parallel")
 		batchReadNum := c.Int("batch-read-num")
 
-		targetPath := c.Args().First()
-		targetPath, err = homedir.Expand(targetPath)
-		if err != nil {
-			return err
-		}
-		if !filehelper.ExistDir(targetPath) {
-			return xerrors.New("Unexpected! The path to dataset does not exist")
+		tpaths := c.Args().Slice()
+		targetPathList := make([]string, 0)
+		for _, targetPath := range tpaths {
+			targetPath, err = homedir.Expand(targetPath)
+			if err != nil {
+				return err
+			}
+			if !filehelper.ExistDir(targetPath) {
+				return xerrors.New("Unexpected! The path to dataset does not exist")
+			}
+			targetPathList = append(targetPathList, targetPath)
 		}
 		var ds ds.Datastore
 
@@ -142,7 +151,7 @@ var importDatasetCmd = &cli.Command{
 
 		bs := bstore.NewBlockstore(ds.(*dsmount.Datastore))
 
-		return dataset.Import(ctx, targetPath, bs, merkledag.V0CidPrefix(), parallel, batchReadNum)
+		return dataset.Import(ctx, bs, merkledag.V0CidPrefix(), parallel, batchReadNum, c.String("prefix"), c.String("record-dir"), targetPathList)
 	},
 }
 
