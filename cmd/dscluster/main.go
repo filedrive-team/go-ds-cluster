@@ -253,8 +253,9 @@ func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string, dis
 
 func loadMutcaskConf(cfg *config.Config, mutcaskConf string) (conf *mutcaskds.Config, err error) {
 	conf = &mutcaskds.Config{
-		Path:    cfg.Mutcask.Path,
-		CaskNum: cfg.Mutcask.CaskNum,
+		Path:            cfg.Mutcask.Path,
+		CaskNum:         cfg.Mutcask.CaskNum,
+		HintBootReadNum: cfg.Mutcask.HintBootReadNum,
 	}
 	if mutcaskConf != "" {
 		cfgpath := mutcaskConf

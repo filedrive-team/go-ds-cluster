@@ -14,8 +14,9 @@ import (
 var _ ds.Datastore = (*MutcaskDS)(nil)
 
 type Config struct {
-	Path    string `json:"path"`
-	CaskNum uint32 `json:"cask_num"`
+	Path            string `json:"path"`
+	CaskNum         uint32 `json:"cask_num"`
+	HintBootReadNum int    `json:"hint_boot_read_num"`
 }
 
 type MutcaskDS struct {
