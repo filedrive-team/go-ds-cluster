@@ -72,11 +72,11 @@ var importDatasetCmd = &cli.Command{
 	Name:  "import-dataset",
 	Usage: "import files from the specified dataset",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "dscluster",
-			Required: true,
-			Usage:    "specify the dscluster config path",
-		},
+		// &cli.StringFlag{
+		// 	Name:     "dscluster",
+		// 	Required: true,
+		// 	Usage:    "specify the dscluster config path",
+		// },
 		&cli.IntFlag{
 			Name:  "retry",
 			Value: 5,
@@ -101,7 +101,16 @@ var importDatasetCmd = &cli.Command{
 	},
 	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
-		dsclusterCfg := c.String("dscluster")
+		confPath := c.String("conf")
+		confPath, err = homedir.Expand(confPath)
+		if err != nil {
+			return err
+		}
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+		//dsclusterCfg := c.String("dscluster")
 		parallel := c.Int("parallel")
 		batchReadNum := c.Int("batch-read-num")
 
@@ -115,10 +124,10 @@ var importDatasetCmd = &cli.Command{
 		}
 		var ds ds.Datastore
 
-		cfg, err := config.ReadConfig(dsclusterCfg)
-		if err != nil {
-			return err
-		}
+		// cfg, err := config.ReadConfig(dsclusterCfg)
+		// if err != nil {
+		// 	return err
+		// }
 		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
 		if err != nil {
 			return err
