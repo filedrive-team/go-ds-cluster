@@ -7,7 +7,7 @@ require (
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4
-	github.com/filedag-project/mutcask v0.0.0-20220416093247-cfc37bf7ce7d
+	github.com/filedag-project/mutcask v0.0.1
 	github.com/filedrive-team/filehelper v0.1.0
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -40,8 +40,10 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whyrusleeping/cbor-gen v0.0.0-20220323183124-98fa8256a799
 	go.uber.org/fx v1.14.2
+	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
 )
