@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
@@ -26,7 +27,7 @@ func MakeBasicHost(listenPort string) (host.Host, error) {
 		libp2p.DefaultTransports,
 	}
 
-	return libp2p.New(opts...)
+	return libp2p.New(context.Background(), opts...)
 }
 
 func HostFromConf(cfg *config.Config) (host.Host, error) {
@@ -41,7 +42,7 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
 	}
-	h, err := libp2p.New(opts...)
+	h, err := libp2p.New(context.Background(), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,5 +74,5 @@ func MakeHost(listenPort string, keypath string) (host.Host, error) {
 		opts = append(opts, libp2p.PrivateNetwork(psk))
 	}
 
-	return libp2p.New(opts...)
+	return libp2p.New(context.Background(), opts...)
 }
