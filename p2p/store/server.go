@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
-const waitClose = 5
+const waitClose = 10
 
 type server struct {
 	ctx           context.Context

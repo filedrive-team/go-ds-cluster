@@ -7,7 +7,7 @@ require (
 	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/filecoin-project/go-cbor-util v0.0.0-20201016124514-d0bbec7bfcc4
-	github.com/filedag-project/mutcask v0.0.1
+	github.com/filedag-project/mutcask v0.0.2-0.20220424152309-661ac16139f9
 	github.com/filedrive-team/filehelper v0.1.1-0.20220418034500-16c400bf0b29
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
