@@ -11,7 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
-const waitClose = 10
+const waitClose = 5
 
 type server struct {
 	ctx           context.Context
@@ -58,7 +58,7 @@ func (sv *server) handleStream(s network.Stream) {
 	reqMsg := new(RequestMessage)
 
 	if err := ReadRequestMsg(s, reqMsg); err != nil {
-		logging.Error(err)
+		logging.Errorf("server read request failed: %s", err)
 		return
 	}
 
@@ -90,7 +90,7 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 	}
 	//res.Msg = "ok"
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever put write reply failed: %s", err)
 	}
 }
 
@@ -108,7 +108,7 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 		res.Exists = exists
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever has write reply failed: %s", err)
 	}
 }
 
@@ -126,7 +126,7 @@ func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 		res.Size = int64(size)
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever getSize write reply failed: %s", err)
 	}
 }
 
@@ -144,7 +144,7 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 		res.Value = v
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever get write reply failed: %s", err)
 	}
 }
 
@@ -161,7 +161,7 @@ func (sv *server) delete(s network.Stream, req *RequestMessage) {
 		}
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever delete write reply failed: %s", err)
 	}
 }
 

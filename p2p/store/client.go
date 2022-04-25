@@ -62,14 +62,14 @@ func (cl *client) Put(key string, value []byte) error {
 		Action: ActPut,
 	}
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("Put write request failed: %s", err)
 		return err
 	}
 
 	reply := &ReplyMessage{}
 
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("Put read reply failed: %s", err)
 		return err
 	}
 	// var b bytes.Buffer
@@ -96,14 +96,14 @@ func (cl *client) Delete(key string) error {
 		Action: ActDelete,
 	}
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("Delete write request failed: %s", err)
 		return err
 	}
 
 	reply := &ReplyMessage{}
 
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("Delete read reply failed: %s", err)
 		return err
 	}
 	if reply.Code != ErrNone {
@@ -127,14 +127,14 @@ func (cl *client) Get(key string) (value []byte, err error) {
 	}
 
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("Get write request failed: %s", err)
 		return nil, err
 	}
 
 	reply := &ReplyMessage{}
 
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("Get read reply failed: %s", err)
 		return nil, err
 	}
 	if reply.Code != ErrNone {
@@ -159,13 +159,13 @@ func (cl *client) Has(key string) (exists bool, err error) {
 		Action: ActHas,
 	}
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("Has write request failed: %s", err)
 		return false, err
 	}
 
 	reply := &ReplyMessage{}
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("Has read reply failed: %s", err)
 		return false, err
 	}
 	// var b bytes.Buffer
@@ -196,14 +196,14 @@ func (cl *client) GetSize(key string) (size int, err error) {
 	}
 
 	if err := WriteRequstMsg(s, req); err != nil {
-		logging.Error(err)
+		logging.Errorf("GetSize write request failed: %s", err)
 		return -1, err
 	}
 
 	reply := &ReplyMessage{}
 
 	if err := ReadReplyMsg(s, reply); err != nil {
-		logging.Error(err)
+		logging.Errorf("GetSize read reply failed: %s", err)
 		return -1, err
 	}
 	if reply.Code != ErrNone {
