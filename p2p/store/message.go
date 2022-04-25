@@ -13,11 +13,31 @@ const (
 	ActQuery
 )
 
+func (act Act) String() string {
+	switch act {
+	case ActPut:
+		return "Put"
+	case ActDelete:
+		return "Delete"
+	case ActGet:
+		return "Get"
+	case ActGetSize:
+		return "GetSize"
+	case ActHas:
+		return "Has"
+	case ActQuery:
+		return "Query"
+	default:
+		return "Unknown"
+	}
+}
+
 type ErrCode uint8
 
 const (
 	ErrNone ErrCode = iota
 	ErrNotFound
+	ErrQueryResultEnd
 
 	ErrOthers = 100
 )

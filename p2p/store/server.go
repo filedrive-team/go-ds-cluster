@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
@@ -54,34 +55,55 @@ func (sv *server) handleStream(s network.Stream) {
 		logging.Info("waitClose end")
 		s.Close()
 	}()
-	logging.Info("serve incoming stream")
-	reqMsg := new(RequestMessage)
+	for {
+		logging.Info("serve incoming stream")
+		reqMsg := new(RequestMessage)
 
-	if err := ReadRequestMsg(s, reqMsg); err != nil {
-		logging.Errorf("server read request failed: %s", err)
-		return
-	}
+		if err := ReadRequestMsg(s, reqMsg); err != nil {
+			logging.Errorf("server read request failed: %s", err)
+			return
+		}
 
-	logging.Infof("req action %v", reqMsg.Action)
-	switch reqMsg.Action {
-	case ActGet:
-		sv.get(s, reqMsg)
-	case ActGetSize:
-		sv.getSize(s, reqMsg)
-	case ActHas:
-		sv.has(s, reqMsg)
-	case ActPut:
-		sv.put(s, reqMsg)
-	case ActDelete:
-		sv.delete(s, reqMsg)
-	case ActQuery:
-		sv.query(s, reqMsg)
-	default:
-		logging.Warnf("unhandled action: %v", reqMsg.Action)
+		logging.Infof("req action %v", reqMsg.Action)
+		switch reqMsg.Action {
+		case ActGet:
+			if err := sv.get(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		case ActGetSize:
+			if err := sv.getSize(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		case ActHas:
+			if err := sv.has(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		case ActPut:
+			if err := sv.put(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		case ActDelete:
+			if err := sv.delete(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		case ActQuery:
+			if err := sv.query(s, reqMsg); err != nil {
+				logging.Error(err)
+				return
+			}
+		default:
+			logging.Errorf("unhandled action: %v", reqMsg.Action)
+			return
+		}
 	}
 }
 
-func (sv *server) put(s network.Stream, req *RequestMessage) {
+func (sv *server) put(s network.Stream, req *RequestMessage) error {
 	logging.Infof("put %s, value size: %d", req.Key, len(req.Value))
 	res := &ReplyMessage{}
 	if err := sv.ds.Put(sv.ctx, ds.NewKey(req.Key), req.Value); err != nil {
@@ -90,11 +112,12 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 	}
 	//res.Msg = "ok"
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Errorf("sever put write reply failed: %s", err)
+		return fmt.Errorf("sever put write reply failed: %s", err)
 	}
+	return nil
 }
 
-func (sv *server) has(s network.Stream, req *RequestMessage) {
+func (sv *server) has(s network.Stream, req *RequestMessage) error {
 	res := &ReplyMessage{}
 	exists, err := sv.ds.Has(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
@@ -108,11 +131,12 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 		res.Exists = exists
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Errorf("sever has write reply failed: %s", err)
+		return fmt.Errorf("sever has write reply failed: %s", err)
 	}
+	return nil
 }
 
-func (sv *server) getSize(s network.Stream, req *RequestMessage) {
+func (sv *server) getSize(s network.Stream, req *RequestMessage) error {
 	res := &ReplyMessage{}
 	size, err := sv.ds.GetSize(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
@@ -126,11 +150,12 @@ func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 		res.Size = int64(size)
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Errorf("sever getSize write reply failed: %s", err)
+		return fmt.Errorf("sever getSize write reply failed: %s", err)
 	}
+	return nil
 }
 
-func (sv *server) get(s network.Stream, req *RequestMessage) {
+func (sv *server) get(s network.Stream, req *RequestMessage) error {
 	res := &ReplyMessage{}
 	v, err := sv.ds.Get(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
@@ -144,11 +169,12 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 		res.Value = v
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Errorf("sever get write reply failed: %s", err)
+		return fmt.Errorf("sever get write reply failed: %s", err)
 	}
+	return nil
 }
 
-func (sv *server) delete(s network.Stream, req *RequestMessage) {
+func (sv *server) delete(s network.Stream, req *RequestMessage) error {
 	res := &ReplyMessage{}
 
 	if sv.disableDelete {
@@ -161,20 +187,21 @@ func (sv *server) delete(s network.Stream, req *RequestMessage) {
 		}
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Errorf("sever delete write reply failed: %s", err)
+		return fmt.Errorf("sever delete write reply failed: %s", err)
 	}
+	return nil
 }
 
-func (sv *server) query(s network.Stream, req *RequestMessage) {
+func (sv *server) query(s network.Stream, req *RequestMessage) error {
 	qresult, err := sv.ds.Query(sv.ctx, DSQuery(req.Query))
 	if err != nil {
 		res := &QueryResultEntry{}
 		res.Code = ErrOthers
 		res.Msg = err.Error()
 		if err := WriteQueryResultEntry(s, res); err != nil {
-			logging.Error(err)
+			return fmt.Errorf("server query write query result entry failed: %s", err)
 		}
-		return
+		return nil
 	}
 
 	for result := range qresult.Next() {
@@ -183,17 +210,21 @@ func (sv *server) query(s network.Stream, req *RequestMessage) {
 			res.Code = ErrOthers
 			res.Msg = result.Error.Error()
 			if err := WriteQueryResultEntry(s, res); err != nil {
-				logging.Error(err)
+				return fmt.Errorf("server query write query result entry failed: %s", err)
 			}
-			return
+			return nil
 		}
 		res.Key = result.Key
 		res.Value = result.Value
 		res.Size = int64(result.Size)
 		if err := WriteQueryResultEntry(s, res); err != nil {
-			logging.Error(err)
-			return
+			return fmt.Errorf("server query write query result entry failed: %s", err)
 		}
 	}
-
+	res := &QueryResultEntry{}
+	res.Code = ErrQueryResultEnd
+	if err := WriteQueryResultEntry(s, res); err != nil {
+		return fmt.Errorf("server query write query result entry failed: %s", err)
+	}
+	return nil
 }
