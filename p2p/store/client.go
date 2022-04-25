@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"sync"
 
 	"github.com/filedrive-team/go-ds-cluster/core"
 	ds "github.com/ipfs/go-datastore"
@@ -15,154 +14,24 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const maxStreamNum = 512
-
 type client struct {
-	ctx        context.Context
-	src        host.Host
-	target     peer.AddrInfo
-	protocol   protocol.ID
-	trans      chan transaction
-	queryTrans chan queryTrans
-	closeChan  chan struct{}
-	close      func()
+	ctx      context.Context
+	src      host.Host
+	target   peer.AddrInfo
+	protocol protocol.ID
 }
 
 func NewStoreClient(ctx context.Context, src host.Host, target peer.AddrInfo, pid protocol.ID) core.DataNodeClient {
 	src.Peerstore().AddAddrs(target.ID, target.Addrs, peerstore.PermanentAddrTTL)
-	cl := &client{
-		ctx:        ctx,
-		src:        src,
-		target:     target,
-		protocol:   pid,
-		trans:      make(chan transaction, maxStreamNum),
-		closeChan:  make(chan struct{}),
-		queryTrans: make(chan queryTrans),
-	}
-	if err := cl.ConnectTarget(); err != nil {
-		panic(err)
-	}
-	for i := 0; i < maxStreamNum; i++ {
-		go cl.initStream()
-	}
-	go cl.initQueryStream()
-	var once sync.Once
-	cl.close = func() {
-		once.Do(func() {
-			close(cl.closeChan)
-		})
-	}
-	return cl
-}
-
-func (cl *client) initStream() {
-	var s network.Stream
-	defer func() {
-		if s != nil {
-			s.Close()
-		}
-	}()
-	for {
-		select {
-		case <-cl.ctx.Done():
-			return
-		case <-cl.closeChan:
-			return
-		case tm := <-cl.trans:
-			func() {
-				var err error
-				defer func() {
-					if err != nil {
-						tm.Out <- &ReplyMessage{
-							Code: ErrOthers,
-							Msg:  err.Error(),
-						}
-					}
-				}()
-				if s == nil {
-					s, err = cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
-					if err != nil {
-						logging.Errorf("client init stream failed: %s", err)
-						return
-					}
-				}
-				if err = WriteRequstMsg(s, tm.In); err != nil {
-					logging.Errorf("%s write request failed: %s", tm.In.Action, err)
-					return
-				}
-				reply := &ReplyMessage{}
-
-				if err = ReadReplyMsg(s, reply); err != nil {
-					logging.Errorf("%s read reply failed: %s", tm.In.Action, err)
-					return
-				}
-				tm.Out <- reply
-			}()
-		}
-	}
-}
-
-func (cl *client) initQueryStream() {
-	var s network.Stream
-	defer func() {
-		if s != nil {
-			s.Close()
-		}
-	}()
-
-	for {
-		select {
-		case <-cl.ctx.Done():
-			return
-		case <-cl.closeChan:
-			return
-		case tm := <-cl.queryTrans:
-			func() {
-				var err error
-				defer func() {
-					if err != nil {
-						tm.Out <- &QueryResultEntry{
-							Code: ErrOthers,
-							Msg:  err.Error(),
-						}
-					}
-				}()
-				if s == nil {
-					s, err = cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
-					if err != nil {
-						logging.Errorf("client init stream failed(query): %s", err)
-						return
-					}
-				}
-				if err = WriteRequstMsg(s, tm.In); err != nil {
-					logging.Errorf("%s write request failed: %s", tm.In.Action, err)
-					return
-				}
-				for {
-					select {
-					case <-tm.Stop:
-						return
-					case <-cl.ctx.Done():
-						return
-					case <-cl.closeChan:
-						return
-					default:
-						ent := &QueryResultEntry{}
-						if err = ReadQueryResultEntry(s, ent); err != nil {
-							logging.Errorf("%s read query result failed: %s", tm.In.Action, err)
-							return
-						}
-						tm.Out <- ent
-					}
-				}
-
-			}()
-		}
+	return &client{
+		ctx:      ctx,
+		src:      src,
+		target:   target,
+		protocol: pid,
 	}
 }
 
 func (cl *client) Close() error {
-	cl.close()
 	return cl.src.Close()
 }
 
@@ -179,18 +48,34 @@ func (cl *client) ConnectTarget() error {
 }
 
 func (cl *client) Put(key string, value []byte) error {
+	_ = cl.ConnectTarget()
+
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Value:  value,
 		Action: ActPut,
 	}
-	replyChan := make(chan *ReplyMessage)
-	cl.trans <- transaction{
-		In:  req,
-		Out: replyChan,
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Errorf("Put write request failed: %s", err)
+		return err
 	}
 
-	reply := <-replyChan
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Errorf("Put read reply failed: %s", err)
+		return err
+	}
+	// var b bytes.Buffer
+	// if err := reply.MarshalCBOR(&b); err == nil {
+	// 	logging.Infof("[Put] reply bytes: %v", b.Bytes())
+	// }
 	if reply.Code != ErrNone {
 		return xerrors.New(reply.Msg)
 	}
@@ -198,17 +83,29 @@ func (cl *client) Put(key string, value []byte) error {
 }
 
 func (cl *client) Delete(key string) error {
+	_ = cl.ConnectTarget()
+
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Action: ActDelete,
 	}
-	replyChan := make(chan *ReplyMessage)
-	cl.trans <- transaction{
-		In:  req,
-		Out: replyChan,
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Errorf("Delete write request failed: %s", err)
+		return err
 	}
 
-	reply := <-replyChan
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Errorf("Delete read reply failed: %s", err)
+		return err
+	}
 	if reply.Code != ErrNone {
 		return xerrors.New(reply.Msg)
 	}
@@ -216,17 +113,30 @@ func (cl *client) Delete(key string) error {
 }
 
 func (cl *client) Get(key string) (value []byte, err error) {
+	_ = cl.ConnectTarget()
+
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Action: ActGet,
 	}
-	replyChan := make(chan *ReplyMessage)
-	cl.trans <- transaction{
-		In:  req,
-		Out: replyChan,
+
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Errorf("Get write request failed: %s", err)
+		return nil, err
 	}
 
-	reply := <-replyChan
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Errorf("Get read reply failed: %s", err)
+		return nil, err
+	}
 	if reply.Code != ErrNone {
 		if reply.Code == ErrNotFound {
 			return nil, ds.ErrNotFound
@@ -237,17 +147,31 @@ func (cl *client) Get(key string) (value []byte, err error) {
 }
 
 func (cl *client) Has(key string) (exists bool, err error) {
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return false, err
+	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Action: ActHas,
 	}
-	replyChan := make(chan *ReplyMessage)
-	cl.trans <- transaction{
-		In:  req,
-		Out: replyChan,
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Errorf("Has write request failed: %s", err)
+		return false, err
 	}
 
-	reply := <-replyChan
+	reply := &ReplyMessage{}
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Errorf("Has read reply failed: %s", err)
+		return false, err
+	}
+	// var b bytes.Buffer
+	// if err := reply.MarshalCBOR(&b); err == nil {
+	// 	logging.Infof("[Has] reply bytes: %v", b.Bytes())
+	// }
 	if reply.Code != ErrNone {
 		if reply.Code == ErrNotFound {
 			return false, nil
@@ -259,17 +183,29 @@ func (cl *client) Has(key string) (exists bool, err error) {
 }
 
 func (cl *client) GetSize(key string) (size int, err error) {
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return -1, err
+	}
+	defer s.Close()
+
 	req := &RequestMessage{
 		Key:    key,
 		Action: ActGetSize,
 	}
-	replyChan := make(chan *ReplyMessage)
-	cl.trans <- transaction{
-		In:  req,
-		Out: replyChan,
+
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Errorf("GetSize write request failed: %s", err)
+		return -1, err
 	}
 
-	reply := <-replyChan
+	reply := &ReplyMessage{}
+
+	if err := ReadReplyMsg(s, reply); err != nil {
+		logging.Errorf("GetSize read reply failed: %s", err)
+		return -1, err
+	}
 	if reply.Code != ErrNone {
 		if reply.Code == ErrNotFound {
 			return -1, ds.ErrNotFound
@@ -281,24 +217,32 @@ func (cl *client) GetSize(key string) (size int, err error) {
 }
 
 func (cl *client) Query(q dsq.Query) (dsq.Results, error) {
+	_ = cl.ConnectTarget()
+	s, err := cl.src.NewStream(cl.ctx, cl.target.ID, cl.protocol)
+	if err != nil {
+		return nil, err
+	}
+	//defer s.Close()
+
 	req := &RequestMessage{
 		Query:  P2PQuery(q),
 		Action: ActQuery,
 	}
-	replyChan := make(chan *QueryResultEntry)
-	stopChan := make(chan struct{})
-	cl.queryTrans <- queryTrans{
-		In:   req,
-		Out:  replyChan,
-		Stop: stopChan,
+
+	if err := WriteRequstMsg(s, req); err != nil {
+		logging.Error(err)
+		return nil, err
 	}
 
 	nextValue := func() (dsq.Result, bool) {
-		ent := <-replyChan
+		ent := &QueryResultEntry{}
+
+		if err := ReadQueryResultEntry(s, ent); err != nil {
+			s.Close()
+			return dsq.Result{Error: err}, false
+		}
 		if ent.Code != ErrNone {
-			if ent.Code == ErrQueryResultEnd {
-				return dsq.Result{}, false
-			}
+			s.Close()
 			return dsq.Result{Error: xerrors.New(ent.Msg)}, false
 		}
 		return dsq.Result{Entry: dsq.Entry{
@@ -306,28 +250,11 @@ func (cl *client) Query(q dsq.Query) (dsq.Results, error) {
 			Value: ent.Value,
 		}}, true
 	}
-	var once sync.Once
-	close := func() {
-		once.Do(func() {
-			close(stopChan)
-		})
-	}
+
 	return dsq.ResultsFromIterator(q, dsq.Iterator{
 		Close: func() error {
-			close()
-			return nil
+			return s.Close()
 		},
 		Next: nextValue,
 	}), nil
-}
-
-type transaction struct {
-	In  *RequestMessage
-	Out chan *ReplyMessage
-}
-
-type queryTrans struct {
-	In   *RequestMessage
-	Out  chan *QueryResultEntry
-	Stop chan struct{}
 }
