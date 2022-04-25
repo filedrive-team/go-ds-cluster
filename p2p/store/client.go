@@ -15,7 +15,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const maxStreamNum = 8
+const maxStreamNum = 512
 
 type client struct {
 	ctx        context.Context
