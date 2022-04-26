@@ -31,6 +31,9 @@ type ClusterClient struct {
 }
 
 func NewClusterClient(ctx context.Context, cfg *config.Config) (*ClusterClient, error) {
+	if len(cfg.Nodes) == 0 {
+		return nil, xerrors.New("There hasn't any cluster node in config")
+	}
 	h, err := p2p.HostFromConf(cfg)
 	if err != nil {
 		return nil, err
@@ -73,7 +76,7 @@ func (d *ClusterClient) nodeByKey(kstr string) (core.DataNodeClient, error) {
 	return client, nil
 }
 
-func (d *ClusterClient) Put(k ds.Key, value []byte) error {
+func (d *ClusterClient) Put(ctx context.Context, k ds.Key, value []byte) error {
 	if d.readOnly {
 		return xerrors.Errorf("readonly client!!!")
 	}
@@ -86,7 +89,7 @@ func (d *ClusterClient) Put(k ds.Key, value []byte) error {
 	return client.Put(kstr, value)
 }
 
-func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
+func (d *ClusterClient) Get(ctx context.Context, k ds.Key) ([]byte, error) {
 	kstr := k.String()
 	//logging.Infof("get %s", kstr)
 	client, err := d.nodeByKey(kstr)
@@ -96,7 +99,7 @@ func (d *ClusterClient) Get(k ds.Key) ([]byte, error) {
 	return client.Get(kstr)
 }
 
-func (d *ClusterClient) Has(k ds.Key) (bool, error) {
+func (d *ClusterClient) Has(ctx context.Context, k ds.Key) (bool, error) {
 	kstr := k.String()
 	//logging.Infof("has %s", kstr)
 	client, err := d.nodeByKey(kstr)
@@ -106,7 +109,7 @@ func (d *ClusterClient) Has(k ds.Key) (bool, error) {
 	return client.Has(kstr)
 }
 
-func (d *ClusterClient) GetSize(k ds.Key) (int, error) {
+func (d *ClusterClient) GetSize(ctx context.Context, k ds.Key) (int, error) {
 	kstr := k.String()
 	//logging.Infof("get size %s", kstr)
 	client, err := d.nodeByKey(kstr)
@@ -116,7 +119,7 @@ func (d *ClusterClient) GetSize(k ds.Key) (int, error) {
 	return client.GetSize(kstr)
 }
 
-func (d *ClusterClient) Delete(k ds.Key) error {
+func (d *ClusterClient) Delete(ctx context.Context, k ds.Key) error {
 	if d.readOnly {
 		return xerrors.Errorf("readonly client!!!")
 	}
@@ -129,7 +132,7 @@ func (d *ClusterClient) Delete(k ds.Key) error {
 	return client.Delete(kstr)
 }
 
-func (d *ClusterClient) Sync(ds.Key) error {
+func (d *ClusterClient) Sync(context.Context, ds.Key) error {
 	return nil
 }
 
@@ -137,7 +140,7 @@ func (d *ClusterClient) Close() error {
 	return d.host.Close()
 }
 
-func (d *ClusterClient) Query(q dsq.Query) (dsq.Results, error) {
+func (d *ClusterClient) Query(ctx context.Context, q dsq.Query) (dsq.Results, error) {
 	out := make(chan dsq.Result)
 	stop := make(chan struct{})
 	closeStop := func() {
@@ -229,19 +232,19 @@ type batch struct {
 	s ds.Datastore
 }
 
-func (d *ClusterClient) Batch() (ds.Batch, error) {
+func (d *ClusterClient) Batch(ctx context.Context) (ds.Batch, error) {
 	return &batch{d}, nil
 }
 
-func (b *batch) Put(key ds.Key, value []byte) error {
-	return b.s.Put(key, value)
+func (b *batch) Put(ctx context.Context, key ds.Key, value []byte) error {
+	return b.s.Put(ctx, key, value)
 }
 
-func (b *batch) Delete(key ds.Key) error {
-	return b.s.Delete(key)
+func (b *batch) Delete(ctx context.Context, key ds.Key) error {
+	return b.s.Delete(ctx, key)
 }
 
-func (b *batch) Commit() error {
+func (b *batch) Commit(ctx context.Context) error {
 	return nil
 }
 

@@ -73,7 +73,12 @@ var importDatasetCmd = &cli.Command{
 	Usage: "import files from the specified dataset",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "dscluster-cfg",
+			Name:     "prefix",
+			Required: true,
+			Usage:    "specify the dscluster config path",
+		},
+		&cli.StringFlag{
+			Name:     "record-dir",
 			Required: true,
 			Usage:    "specify the dscluster config path",
 		},
@@ -101,20 +106,52 @@ var importDatasetCmd = &cli.Command{
 	},
 	Action: func(c *cli.Context) (err error) {
 		ctx := context.Background()
-		dscluster := c.String("dscluster-cfg")
-		parallel := c.Int("parallel")
-		batchReadNum := c.Int("batch-read-num")
-
-		targetPath := c.Args().First()
-		targetPath, err = homedir.Expand(targetPath)
+		confPath := c.String("conf")
+		confPath, err = homedir.Expand(confPath)
 		if err != nil {
 			return err
 		}
-		if !filehelper.ExistDir(targetPath) {
-			return xerrors.Errorf("Unexpected! The path to dataset does not exist")
+		cfg, err := config.ReadConfig(path.Join(confPath, config.DefaultConfigJson))
+		if err != nil {
+			return err
+		}
+		//dsclusterCfg := c.String("dscluster")
+		parallel := c.Int("parallel")
+		batchReadNum := c.Int("batch-read-num")
+
+		tpaths := c.Args().Slice()
+		targetPathList := make([]string, 0)
+		for _, targetPath := range tpaths {
+			targetPath, err = homedir.Expand(targetPath)
+			if err != nil {
+				return err
+			}
+			if !filehelper.ExistDir(targetPath) {
+				return xerrors.New("Unexpected! The path to dataset does not exist")
+			}
+			targetPathList = append(targetPathList, targetPath)
+		}
+		var ds ds.Datastore
+
+		// cfg, err := config.ReadConfig(dsclusterCfg)
+		// if err != nil {
+		// 	return err
+		// }
+		ds, err = clusterclient.NewClusterClient(context.Background(), cfg)
+		if err != nil {
+			return err
 		}
 
-		return dataset.Import(ctx, targetPath, dscluster, parallel, batchReadNum)
+		ds = dsmount.New([]dsmount.Mount{
+			{
+				Prefix:    bstore.BlockPrefix,
+				Datastore: ds,
+			},
+		})
+
+		bs := bstore.NewBlockstore(ds.(*dsmount.Datastore))
+
+		return dataset.Import(ctx, bs, merkledag.V0CidPrefix(), parallel, batchReadNum, c.String("prefix"), c.String("record-dir"), targetPathList)
 	},
 }
 

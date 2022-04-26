@@ -14,29 +14,24 @@ import (
 	"time"
 
 	"github.com/filedrive-team/go-ds-cluster/config"
-	"github.com/filedrive-team/go-ds-cluster/miniods"
-	"github.com/filedrive-team/go-ds-cluster/mongods"
+	"github.com/filedrive-team/go-ds-cluster/mutcaskds"
 	"github.com/filedrive-team/go-ds-cluster/p2p"
 	"github.com/filedrive-team/go-ds-cluster/p2p/share"
 	"github.com/filedrive-team/go-ds-cluster/p2p/store"
 	"github.com/filedrive-team/go-ds-cluster/utils"
 	ds "github.com/ipfs/go-datastore"
-	flatfs "github.com/ipfs/go-ds-flatfs"
 	log "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
-	badgerds "github.com/textileio/go-ds-badger3"
 	"go.uber.org/fx"
 )
 
 var logging = log.Logger("dscluster")
 var confpath string
-var mongodb string
-var minio string
-var useBadger bool
+var mutcask string
 var loglevel string
 var disableDelete string
 var identityIdx int
@@ -44,13 +39,11 @@ var bootstrapper string
 
 func main() {
 	flag.StringVar(&confpath, "conf", config.DefaultConfigPath, "")
-	flag.StringVar(&mongodb, "mongodb", "", "")
-	flag.StringVar(&minio, "minio", "", "")
+	flag.StringVar(&mutcask, "mutcask", "", "")
 	flag.StringVar(&loglevel, "log-level", "error", "")
 	flag.StringVar(&disableDelete, "disable-delete", "", "")
 	flag.IntVar(&identityIdx, "identity", 0, "get node identity from bootstrap node")
 	flag.StringVar(&bootstrapper, "bootstrapper", "", "")
-	flag.BoolVar(&useBadger, "badger", false, "")
 	flag.Parse()
 	log.SetLogLevel("*", loglevel)
 	var disabledel bool
@@ -110,48 +103,23 @@ func main() {
 		return cfg
 	})
 
-	var dsOption fx.Option
-	if mongodb != "" {
-		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle) (ds.Datastore, error) {
-			monds, err := mongods.NewMongoDS(ctx, mongods.ExtendConf(&mongods.Config{
-				Uri: mongodb,
-			}))
-			if err != nil {
-				return nil, err
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(ctx context.Context) error {
-					return monds.Close()
-				},
-			})
-			return monds, nil
+	dsOption := fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
+		// load customized mutcask configs
+		conf, err := loadMutcaskConf(cfg, mutcask)
+		if err != nil {
+			return nil, err
+		}
+		mutds, err := mutcaskds.NewMutcaskDS(ctx, conf)
+		if err != nil {
+			return nil, err
+		}
+		lc.Append(fx.Hook{
+			OnStop: func(ctx context.Context) error {
+				return mutds.Close()
+			},
 		})
-	} else if minio != "" {
-		dsOption = fx.Provide(func(ctx context.Context, lc fx.Lifecycle, cfg *config.Config) (ds.Datastore, error) {
-			cfgpath := minio
-			if !strings.HasPrefix(cfgpath, "/") {
-				cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
-			}
-			miniocfg, err := miniods.LoadConfig(cfgpath)
-			if err != nil {
-				return nil, err
-			}
-			mds, err := miniods.NewMinioDS(ctx, miniocfg)
-			if err != nil {
-				return nil, err
-			}
-			lc.Append(fx.Hook{
-				OnStop: func(ctx context.Context) error {
-					return mds.Close()
-				},
-			})
-			return mds, nil
-		})
-	} else if useBadger {
-		dsOption = fx.Provide(BadgerDS)
-	} else {
-		dsOption = fx.Provide(FlatFS)
-	}
+		return mutds, nil
+	})
 
 	app := fx.New(
 		ctxOption,
@@ -207,21 +175,6 @@ func Kickoff(lc fx.Lifecycle, h host.Host, pid protocol.ID, ds ds.Datastore, cfg
 			return nil
 		},
 	})
-}
-
-func BadgerDS(cfg *config.Config) (ds.Datastore, error) {
-	p := cfg.ConfPath + "/blocks"
-	opts := badgerds.DefaultOptions
-	return badgerds.NewDatastore(p, &opts)
-}
-
-func FlatFS(cfg *config.Config) (ds.Datastore, error) {
-	p := cfg.ConfPath + "/blocks"
-	shardFunc, err := flatfs.ParseShardFunc("/repo/flatfs/shard/v1/next-to-last/2")
-	if err != nil {
-		return nil, err
-	}
-	return flatfs.CreateOrOpen(p, shardFunc, true)
 }
 
 func ProtocolID() protocol.ID {
@@ -294,6 +247,34 @@ func initClusterConfig(ctxbg context.Context, confpath, bootstrapper string, dis
 	err = ioutil.WriteFile(path.Join(confpath, config.DefaultConfigJson), cfgbs, 0644)
 	if err != nil {
 		return
+	}
+	return
+}
+
+func loadMutcaskConf(cfg *config.Config, mutcaskConf string) (conf *mutcaskds.Config, err error) {
+	conf = &mutcaskds.Config{
+		Path:            cfg.Mutcask.Path,
+		CaskNum:         cfg.Mutcask.CaskNum,
+		HintBootReadNum: cfg.Mutcask.HintBootReadNum,
+	}
+	if mutcaskConf != "" {
+		cfgpath := mutcaskConf
+		if !strings.HasPrefix(cfgpath, "/") {
+			cfgpath = filepath.Join(cfg.ConfPath, cfgpath)
+		}
+		conf, err = mutcaskds.LoadConfig(cfgpath)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if conf.Path == "" {
+		conf.Path = config.DefaultMutcaskPath
+	}
+	if conf.CaskNum == 0 {
+		conf.CaskNum = config.DefaultCaskNum
+	}
+	if !strings.HasPrefix(conf.Path, "/") {
+		conf.Path = filepath.Join(cfg.ConfPath, conf.Path)
 	}
 	return
 }

@@ -58,7 +58,7 @@ func (sv *server) handleStream(s network.Stream) {
 	reqMsg := new(RequestMessage)
 
 	if err := ReadRequestMsg(s, reqMsg); err != nil {
-		logging.Error(err)
+		logging.Errorf("server read request failed: %s", err)
 		return
 	}
 
@@ -84,19 +84,19 @@ func (sv *server) handleStream(s network.Stream) {
 func (sv *server) put(s network.Stream, req *RequestMessage) {
 	logging.Infof("put %s, value size: %d", req.Key, len(req.Value))
 	res := &ReplyMessage{}
-	if err := sv.ds.Put(ds.NewKey(req.Key), req.Value); err != nil {
+	if err := sv.ds.Put(sv.ctx, ds.NewKey(req.Key), req.Value); err != nil {
 		res.Code = ErrOthers
 		res.Msg = err.Error()
 	}
 	//res.Msg = "ok"
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever put write reply failed: %s", err)
 	}
 }
 
 func (sv *server) has(s network.Stream, req *RequestMessage) {
 	res := &ReplyMessage{}
-	exists, err := sv.ds.Has(ds.NewKey(req.Key))
+	exists, err := sv.ds.Has(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
@@ -108,13 +108,13 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 		res.Exists = exists
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever has write reply failed: %s", err)
 	}
 }
 
 func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 	res := &ReplyMessage{}
-	size, err := sv.ds.GetSize(ds.NewKey(req.Key))
+	size, err := sv.ds.GetSize(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
@@ -126,13 +126,13 @@ func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 		res.Size = int64(size)
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever getSize write reply failed: %s", err)
 	}
 }
 
 func (sv *server) get(s network.Stream, req *RequestMessage) {
 	res := &ReplyMessage{}
-	v, err := sv.ds.Get(ds.NewKey(req.Key))
+	v, err := sv.ds.Get(sv.ctx, ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
 			res.Code = ErrNotFound
@@ -144,7 +144,7 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 		res.Value = v
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever get write reply failed: %s", err)
 	}
 }
 
@@ -154,19 +154,19 @@ func (sv *server) delete(s network.Stream, req *RequestMessage) {
 	if sv.disableDelete {
 		logging.Infof("delete operation disabled, ignore delete %s", req.Key)
 	} else {
-		err := sv.ds.Delete(ds.NewKey(req.Key))
+		err := sv.ds.Delete(sv.ctx, ds.NewKey(req.Key))
 		if err != nil {
 			res.Code = ErrOthers
 			res.Msg = err.Error()
 		}
 	}
 	if err := WriteReplyMsg(s, res); err != nil {
-		logging.Error(err)
+		logging.Errorf("sever delete write reply failed: %s", err)
 	}
 }
 
 func (sv *server) query(s network.Stream, req *RequestMessage) {
-	qresult, err := sv.ds.Query(DSQuery(req.Query))
+	qresult, err := sv.ds.Query(sv.ctx, DSQuery(req.Query))
 	if err != nil {
 		res := &QueryResultEntry{}
 		res.Code = ErrOthers

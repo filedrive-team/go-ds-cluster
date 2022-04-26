@@ -10,16 +10,25 @@ import (
 
 const DefaultConfigPath = ".dscluster"
 const DefaultConfigJson = "config.json"
+const DefaultMutcaskPath = "mutcask"
+const DefaultCaskNum = 8
 
 type Config struct {
-	Identity       Identity   `json:"identity"`
-	Addresses      Addresses  `json:"addresses"`
-	ConfPath       string     `json:"conf_path"`
-	Nodes          []Node     `json:"nodes"`
-	DisableDelete  bool       `json:"disable_delete"`
-	ReadOnlyClient bool       `json:"read_only_client"`
-	BootstrapNode  bool       `json:"bootstrap_node"`
-	IdentityList   []Identity `json:"identity_list"`
+	Identity       Identity    `json:"identity"`
+	Addresses      Addresses   `json:"addresses"`
+	ConfPath       string      `json:"conf_path"`
+	Nodes          []Node      `json:"nodes"`
+	DisableDelete  bool        `json:"disable_delete"`
+	ReadOnlyClient bool        `json:"read_only_client"`
+	BootstrapNode  bool        `json:"bootstrap_node"`
+	IdentityList   []Identity  `json:"identity_list"`
+	Mutcask        MutcaskConf `json:"mutcask"`
+}
+
+type MutcaskConf struct {
+	Path            string `json:"path"`
+	CaskNum         uint32 `json:"cask_num"`
+	HintBootReadNum int    `json:"hint_boot_read_num"`
 }
 
 type Node struct {

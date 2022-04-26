@@ -12,14 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/pnet"
-	transport "github.com/libp2p/go-libp2p-core/transport"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
-	swarm "github.com/libp2p/go-libp2p-swarm"
 )
-
-func init() {
-	swarm.DialTimeoutLocal = transport.DialTimeout
-}
 
 func MakeBasicHost(listenPort string) (host.Host, error) {
 	priv, _, err := crypto.GenerateECDSAKeyPair(rand.Reader)
@@ -48,7 +41,6 @@ func HostFromConf(cfg *config.Config) (host.Host, error) {
 		libp2p.Identity(priv),
 		libp2p.DisableRelay(),
 		libp2p.DefaultTransports,
-		libp2p.Transport(libp2pquic.NewTransport),
 	}
 	h, err := libp2p.New(context.Background(), opts...)
 	if err != nil {
