@@ -52,7 +52,7 @@ func TestMutcaskds(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, item := range kvdata {
-		if err := dis.Put(ctx, ds.NewKey(item.Key), item.Value); err != nil {
+		if err := dis.Put(ds.NewKey(item.Key), item.Value); err != nil {
 			t.Fatal(err)
 		}
 	}

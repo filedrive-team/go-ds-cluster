@@ -44,11 +44,11 @@ func NewMutcaskDS(ctx context.Context, cfg *Config) (*MutcaskDS, error) {
 	}, nil
 }
 
-func (dis *MutcaskDS) Put(ctx context.Context, k ds.Key, value []byte) error {
+func (dis *MutcaskDS) Put(k ds.Key, value []byte) error {
 	return dis.kv.Put(k.String(), value)
 }
 
-func (dis *MutcaskDS) Get(ctx context.Context, k ds.Key) ([]byte, error) {
+func (dis *MutcaskDS) Get(k ds.Key) ([]byte, error) {
 	v, err := dis.kv.Get(k.String())
 	if err != nil {
 		if err == kv.ErrNotFound {
@@ -59,7 +59,7 @@ func (dis *MutcaskDS) Get(ctx context.Context, k ds.Key) ([]byte, error) {
 	return v, nil
 }
 
-func (dis *MutcaskDS) Has(ctx context.Context, k ds.Key) (bool, error) {
+func (dis *MutcaskDS) Has(k ds.Key) (bool, error) {
 	_, err := dis.kv.Size(k.String())
 	if err != nil {
 		if err == kv.ErrNotFound {
@@ -70,7 +70,7 @@ func (dis *MutcaskDS) Has(ctx context.Context, k ds.Key) (bool, error) {
 	return true, nil
 }
 
-func (dis *MutcaskDS) GetSize(ctx context.Context, k ds.Key) (int, error) {
+func (dis *MutcaskDS) GetSize(k ds.Key) (int, error) {
 	n, err := dis.kv.Size(k.String())
 	if err != nil {
 		if err == kv.ErrNotFound {
@@ -81,11 +81,11 @@ func (dis *MutcaskDS) GetSize(ctx context.Context, k ds.Key) (int, error) {
 	return n, nil
 }
 
-func (dis *MutcaskDS) Delete(ctx context.Context, k ds.Key) error {
+func (dis *MutcaskDS) Delete(k ds.Key) error {
 	return dis.kv.Delete(k.String())
 }
 
-func (dis *MutcaskDS) Sync(context.Context, ds.Key) error {
+func (dis *MutcaskDS) Sync(ds.Key) error {
 	return nil
 }
 
@@ -93,7 +93,7 @@ func (dis *MutcaskDS) Close() error {
 	return dis.kv.Close()
 }
 
-func (dis *MutcaskDS) Query(ctx context.Context, q dsq.Query) (dsq.Results, error) {
+func (dis *MutcaskDS) Query(q dsq.Query) (dsq.Results, error) {
 	if q.Orders != nil || q.Filters != nil {
 		return nil, xerrors.New("MutcaskDS: orders or filters are not supported")
 	}

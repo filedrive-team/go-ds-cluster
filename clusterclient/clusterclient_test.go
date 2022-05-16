@@ -162,14 +162,14 @@ func TestClusterClient(t *testing.T) {
 	defer client.Close()
 
 	for i, item := range tdata {
-		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
+		err = client.Put(ds.NewKey(item.Key), item.Value)
 		if err != nil {
 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
 		}
 	}
 
 	for _, item := range tdata {
-		has, err := client.Has(ctx, ds.NewKey(item.Key))
+		has, err := client.Has(ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,7 +179,7 @@ func TestClusterClient(t *testing.T) {
 	}
 
 	for _, item := range tdata {
-		size, err := client.GetSize(ctx, ds.NewKey(item.Key))
+		size, err := client.GetSize(ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -189,7 +189,7 @@ func TestClusterClient(t *testing.T) {
 	}
 
 	for _, item := range tdata {
-		v, err := client.Get(ctx, ds.NewKey(item.Key))
+		v, err := client.Get(ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -198,7 +198,7 @@ func TestClusterClient(t *testing.T) {
 		}
 	}
 	for _, item := range tdata {
-		err := client.Delete(ctx, ds.NewKey(item.Key))
+		err := client.Delete(ds.NewKey(item.Key))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -256,7 +256,7 @@ func TestReadOnlyClient(t *testing.T) {
 	defer client.Close()
 
 	for _, item := range tdata {
-		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
+		err = client.Put(ds.NewKey(item.Key), item.Value)
 		if err == nil {
 			t.Fatal("readonly client should not has right to put data")
 		}
@@ -314,13 +314,13 @@ func TestClusterClientQuery(t *testing.T) {
 	defer client.Close()
 
 	for i, item := range tdata {
-		err = client.Put(ctx, ds.NewKey(item.Key), item.Value)
+		err = client.Put(ds.NewKey(item.Key), item.Value)
 		if err != nil {
 			t.Fatalf("index %d, key: %s err: %s", i, item.Key, err)
 		}
 	}
 
-	results, err := client.Query(ctx, dsq.Query{})
+	results, err := client.Query(dsq.Query{})
 	if err != nil {
 		t.Fatal(err)
 	}
