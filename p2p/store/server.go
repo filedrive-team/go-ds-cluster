@@ -55,8 +55,10 @@ func (sv *server) handleStream(s network.Stream) {
 		s.Close()
 	}()
 	logging.Info("serve incoming stream")
-	reqMsg := new(RequestMessage)
-
+	//reqMsg := new(RequestMessage)
+	reqMsg := reqMsgPool.Get().(*RequestMessage)
+	reqMsg.reset()
+	defer reqMsgPool.Put(reqMsg)
 	if err := ReadRequestMsg(s, reqMsg); err != nil {
 		logging.Errorf("server read request failed: %s", err)
 		return
@@ -83,7 +85,10 @@ func (sv *server) handleStream(s network.Stream) {
 
 func (sv *server) put(s network.Stream, req *RequestMessage) {
 	logging.Infof("put %s, value size: %d", req.Key, len(req.Value))
-	res := &ReplyMessage{}
+	//res := &ReplyMessage{}
+	res := replyMsgPool.Get().(*ReplyMessage)
+	res.reset()
+	defer replyMsgPool.Put(res)
 	if err := sv.ds.Put(ds.NewKey(req.Key), req.Value); err != nil {
 		res.Code = ErrOthers
 		res.Msg = err.Error()
@@ -95,7 +100,10 @@ func (sv *server) put(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) has(s network.Stream, req *RequestMessage) {
-	res := &ReplyMessage{}
+	//res := &ReplyMessage{}
+	res := replyMsgPool.Get().(*ReplyMessage)
+	res.reset()
+	defer replyMsgPool.Put(res)
 	exists, err := sv.ds.Has(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
@@ -113,7 +121,10 @@ func (sv *server) has(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) getSize(s network.Stream, req *RequestMessage) {
-	res := &ReplyMessage{}
+	//res := &ReplyMessage{}
+	res := replyMsgPool.Get().(*ReplyMessage)
+	res.reset()
+	defer replyMsgPool.Put(res)
 	size, err := sv.ds.GetSize(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
@@ -131,7 +142,10 @@ func (sv *server) getSize(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) get(s network.Stream, req *RequestMessage) {
-	res := &ReplyMessage{}
+	//res := &ReplyMessage{}
+	res := replyMsgPool.Get().(*ReplyMessage)
+	res.reset()
+	defer replyMsgPool.Put(res)
 	v, err := sv.ds.Get(ds.NewKey(req.Key))
 	if err != nil {
 		if err == ds.ErrNotFound {
@@ -149,8 +163,10 @@ func (sv *server) get(s network.Stream, req *RequestMessage) {
 }
 
 func (sv *server) delete(s network.Stream, req *RequestMessage) {
-	res := &ReplyMessage{}
-
+	//res := &ReplyMessage{}
+	res := replyMsgPool.Get().(*ReplyMessage)
+	res.reset()
+	defer replyMsgPool.Put(res)
 	if sv.disableDelete {
 		logging.Infof("delete operation disabled, ignore delete %s", req.Key)
 	} else {
