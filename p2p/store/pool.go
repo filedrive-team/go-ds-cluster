@@ -22,7 +22,10 @@ func (req *RequestMessage) reset() {
 	req.Key = ""
 	req.Value = req.Value[:0]
 	req.Action = 0
-	req.Query = Query{}
+	req.Query.KeysOnly = false
+	req.Query.Limit = 0
+	req.Query.Offset = 0
+	req.Query.Prefix = ""
 }
 
 func (rep *ReplyMessage) reset() {
