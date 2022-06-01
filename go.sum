@@ -171,8 +171,8 @@ github.com/filecoin-project/go-cbor-util v0.0.1 h1:E1LYZYTtjfAQwCReho0VXvbu8t3CY
 github.com/filecoin-project/go-cbor-util v0.0.1/go.mod h1:pqTiPHobNkOVM5thSRsHYjyQfq7O5QSCMhvuu9JoDlg=
 github.com/filecoin-project/go-padreader v0.0.1/go.mod h1:VYVPJqwpsfmtoHnAmPx6MUwmrK6HIcDqZJiuZhtmfLQ=
 github.com/filecoin-project/go-state-types v0.0.0-20200903145444-247639ffa6ad/go.mod h1:IQ0MBPnonv35CJHtWSN3YY1Hz2gkPru1Q9qoaYLxx9I=
-github.com/filedag-project/mutcask v0.0.2-0.20220424152309-661ac16139f9 h1:BmD5D1s7CySPh2kZ4eop67S3W5COpk3hYIJeQOBvw+o=
-github.com/filedag-project/mutcask v0.0.2-0.20220424152309-661ac16139f9/go.mod h1:lOXZ2AFMKrID3LuwhrCjcc3UZqfO+0Dlo6/zGLpsLSg=
+github.com/filedag-project/mutcask v0.0.3 h1:KTMELGeWIzrn/pgHG7pi7LVbF+mJIFZHXf+nLIplRlA=
+github.com/filedag-project/mutcask v0.0.3/go.mod h1:lOXZ2AFMKrID3LuwhrCjcc3UZqfO+0Dlo6/zGLpsLSg=
 github.com/filedrive-team/filehelper v0.0.17 h1:kbTSLvhMQWhBYYHtd76P7ZQ2kXApCuB1cTfbSBX511Q=
 github.com/filedrive-team/filehelper v0.0.17/go.mod h1:oARi7q8UYneNEENSkRzNfdcIbO1B7EXldZj1rDeYguU=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
