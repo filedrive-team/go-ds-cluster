@@ -17,6 +17,7 @@ type Config struct {
 	Path            string `json:"path"`
 	CaskNum         uint32 `json:"cask_num"`
 	HintBootReadNum int    `json:"hint_boot_read_num"`
+	Migrate         bool   `json:"migrate"`
 }
 
 type MutcaskDS struct {
@@ -32,7 +33,9 @@ func NewMutcaskDS(ctx context.Context, cfg *Config) (*MutcaskDS, error) {
 		if cfg.CaskNum > 0 {
 			conf.CaskNum = cfg.CaskNum
 		}
-
+		if cfg.Migrate {
+			conf.Migrate = cfg.Migrate
+		}
 	})
 	if err != nil {
 		return nil, err

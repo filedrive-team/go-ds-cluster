@@ -29,6 +29,7 @@ type MutcaskConf struct {
 	Path            string `json:"path"`
 	CaskNum         uint32 `json:"cask_num"`
 	HintBootReadNum int    `json:"hint_boot_read_num"`
+	Migrate         bool   `json:"migrate"`
 }
 
 type Node struct {

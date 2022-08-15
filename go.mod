@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/filecoin-project/go-cbor-util v0.0.1
-	github.com/filedag-project/mutcask v0.0.3
+	github.com/filedag-project/mutcask v0.1.0
 	github.com/filedrive-team/filehelper v0.0.17
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/ipfs/go-blockservice v0.1.7
@@ -36,8 +36,11 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/flynn/noise v1.0.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/google/btree v1.1.2 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -121,8 +124,10 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f // indirect
 	github.com/whyrusleeping/multiaddr-filter v0.0.0-20160516205228-e903e4adabd7 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/dig v1.14.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect

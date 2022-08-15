@@ -256,6 +256,7 @@ func loadMutcaskConf(cfg *config.Config, mutcaskConf string) (conf *mutcaskds.Co
 		Path:            cfg.Mutcask.Path,
 		CaskNum:         cfg.Mutcask.CaskNum,
 		HintBootReadNum: cfg.Mutcask.HintBootReadNum,
+		Migrate:         cfg.Mutcask.Migrate,
 	}
 	if mutcaskConf != "" {
 		cfgpath := mutcaskConf
