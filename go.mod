@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/filecoin-project/go-cbor-util v0.0.1
-	github.com/filedag-project/mutcask v0.1.0
+	github.com/filedag-project/mutcask v0.2.1
 	github.com/filedrive-team/filehelper v0.0.17
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/ipfs/go-blockservice v0.1.7
@@ -25,7 +25,7 @@ require (
 	github.com/urfave/cli/v2 v2.4.8
 	github.com/whyrusleeping/cbor-gen v0.0.0-20220323183124-98fa8256a799
 	go.uber.org/fx v1.17.1
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 )
 
 require (
@@ -136,6 +136,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20210903071746-97244b99971b // indirect
+	golang.org/x/sys v0.3.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
