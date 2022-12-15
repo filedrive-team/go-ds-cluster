@@ -173,6 +173,8 @@ github.com/filecoin-project/go-padreader v0.0.1/go.mod h1:VYVPJqwpsfmtoHnAmPx6MU
 github.com/filecoin-project/go-state-types v0.0.0-20200903145444-247639ffa6ad/go.mod h1:IQ0MBPnonv35CJHtWSN3YY1Hz2gkPru1Q9qoaYLxx9I=
 github.com/filedag-project/mutcask v0.2.1 h1:RlNGe6bz0gqRJ6I/C9xdnfbygZ5SZTfokVcEj1iWk38=
 github.com/filedag-project/mutcask v0.2.1/go.mod h1:h2aTp/c4IH7v4bhXUCju3as62f+EzGS9F0gNa4+ZjdI=
+github.com/filedag-project/mutcask v0.2.4 h1:DchID5b+z3+AMUu/4LN95fPKz4Tzy6Io8VKZowK4b40=
+github.com/filedag-project/mutcask v0.2.4/go.mod h1:368t8XSzBBfzOp8v+A5VJ/I1zU+s9Lcf+fRXGTy27cM=
 github.com/filedrive-team/filehelper v0.0.17 h1:kbTSLvhMQWhBYYHtd76P7ZQ2kXApCuB1cTfbSBX511Q=
 github.com/filedrive-team/filehelper v0.0.17/go.mod h1:oARi7q8UYneNEENSkRzNfdcIbO1B7EXldZj1rDeYguU=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=

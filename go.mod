@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/filecoin-project/go-cbor-util v0.0.1
-	github.com/filedag-project/mutcask v0.2.1
+	github.com/filedag-project/mutcask v0.2.4
 	github.com/filedrive-team/filehelper v0.0.17
 	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/ipfs/go-blockservice v0.1.7
